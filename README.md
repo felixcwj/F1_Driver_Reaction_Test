@@ -31,6 +31,6 @@ An ultra-immersive, single-file web application designed to test your reaction t
 - **Single File:** All HTML, CSS, and JavaScript are contained within `index.html` for portability and performance.
 - **Responsive:** optimized for both Desktop and Mobile (touch support included).
 
-## 📝 License
+## 📝 Copyright
 
-MIT License
+© 2025 All Rights Reserved. This project is for personal use only.
