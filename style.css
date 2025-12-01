@@ -1,0 +1,284 @@
+:root {
+  --bg-day-sky: #87ceeb;
+  --bg-day-track: #333;
+  --bg-night-sky: #0a0a12;
+  --bg-night-track: #1a1a1a;
+  --text-color: #fff;
+  --light-off: #3a3a3a;
+  --light-red: #ff0000;
+  --light-red-glow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+  --cockpit-border: #111;
+  --accent-color: #e10600; /* F1 Red */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Titillium Web", sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    to bottom,
+    var(--bg-day-sky) 50%,
+    var(--bg-day-track) 50%
+  );
+  transition: background 0.5s ease;
+  color: var(--text-color);
+}
+
+body.night-mode {
+  background: linear-gradient(
+    to bottom,
+    var(--bg-night-sky) 50%,
+    var(--bg-night-track) 50%
+  );
+}
+
+/* Cockpit View Overlay */
+.cockpit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    transparent 60%,
+    var(--cockpit-border) 90%
+  );
+  z-index: 10;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+}
+
+/* Visor shape approximation */
+.cockpit-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 15%;
+  background: var(--cockpit-border);
+  border-bottom-left-radius: 50% 20%;
+  border-bottom-right-radius: 50% 20%;
+}
+.cockpit-overlay::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25%;
+  background: var(--cockpit-border);
+  border-top-left-radius: 40% 20%;
+  border-top-right-radius: 40% 20%;
+}
+
+.game-container {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+header h1 {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 900;
+  font-size: 3rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+/* Theme Switch */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.mode-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-shadow: 1px 1px 2px black;
+}
+
+/* Lights */
+.lights-container {
+  display: flex;
+  gap: 15px;
+  background: #222;
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 2px solid #444;
+}
+
+.light-pod {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Usually F1 lights are pairs, but for simplicity we can just show the main red lights or pairs */
+}
+
+/* We will use the bottom light as the main indicator for this simple test, or both */
+.light {
+  width: 60px;
+  height: 60px;
+  background-color: var(--light-off);
+  border-radius: 50%;
+  border: 2px solid #111;
+  transition: background-color 0.1s;
+}
+
+.light.on {
+  background-color: var(--light-red);
+}
+
+body.night-mode .light.on {
+  box-shadow: var(--light-red-glow);
+}
+
+/* Controls & Messages */
+.controls {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.message {
+  font-family: "Orbitron", sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+}
+
+.message.success {
+  color: #00ff00;
+  border: 2px solid #00ff00;
+}
+
+.message.penalty {
+  color: #ff0000;
+  border: 2px solid #ff0000;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.btn-primary {
+  padding: 15px 40px;
+  font-size: 1.5rem;
+  font-family: "Orbitron", sans-serif;
+  font-weight: bold;
+  color: white;
+  background-color: var(--accent-color);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.1s, background-color 0.2s;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+.btn-primary:hover {
+  background-color: #ff3333;
+}
+
+.instructions {
+  font-size: 1.1rem;
+  opacity: 0.8;
+  text-shadow: 1px 1px 2px black;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  .lights-container {
+    gap: 5px;
+    padding: 10px;
+  }
+  .light {
+    width: 40px;
+    height: 40px;
+  }
+  header h1 {
+    font-size: 2rem;
+  }
+}
