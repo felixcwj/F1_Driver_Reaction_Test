@@ -1,42 +1,36 @@
-# F1 Driver Reaction Test 🏎️💨
+# F1 Driver Reaction Test (Singapore GP Edition) 🏎️🇸🇬
 
-Test your reflexes like a Formula 1 driver! This interactive web application simulates the F1 start sequence, challenging you to launch your car exactly when the lights go out.
+**"It's lights out and away we go!"**
+
+An ultra-immersive, single-file web application designed to test your reaction times against strict Formula 1 start regulations. Featuring a "Cockpit View" and a neon-lit "Singapore GP" night mode.
+
+## 🏁 Features
+
+- **Strict FIA Logic:**
+  - 5 Red Lights turn on at exactly 1.0s intervals.
+  - **Randomized Start:** Lights go out between 0.2s and 3.0s after the 5th light (FIA Regulation).
+  - **Jump Start Detection:** Moving before the lights go out results in immediate disqualification.
+- **Immersive Visuals:**
+  - **Cockpit Visor:** A simulated helmet view overlay.
+  - **Singapore Night Mode:** Default theme featuring track floodlights and neon accents.
+  - **Monza Day Mode:** Toggleable bright daylight theme.
+  - **Pure CSS/SVG:** No external image assets used.
+- **Precision Timing:** Reaction times measured in milliseconds using `performance.now()`.
 
 ## 🎮 How to Play
 
-1.  **The Sequence:** Click "LAUNCH" (or press Spacebar) to initiate the start sequence.
-2.  **The Lights:** Watch as the 5 red lights turn on one by one.
-3.  **The Start:** Once all 5 lights are on, wait for them to go out.
-4.  **The Reaction:** Click "LAUNCH" (or press Spacebar) **IMMEDIATELY** when the lights disappear.
-5.  **The Result:**
-    - **Success:** Your reaction time will be displayed in milliseconds.
-    - **False Start:** If you click while the lights are still red, you get a "JUMP START" penalty!
+1.  **Open `index.html`** in any modern web browser.
+2.  **Click "LAUNCH CLUTCH"** (or press Spacebar) to initiate the start sequence.
+3.  **Focus:** Watch the 5 red lights turn on.
+4.  **React:** Click or press Spacebar **IMMEDIATELY** when the lights go out.
+    - _Too early?_ **JUMP START** (Disqualified).
+    - _Just right?_ See your time in milliseconds.
 
-## 🌟 Features
+## 🛠️ Technical Details
 
-- **Cockpit View:** Immersive overlay simulating an F1 driver's helmet visor.
-- **Day & Night Modes:** Toggle between a bright daytime track (Monza style) and a neon-lit night race (Singapore style).
-- **Realistic Timing:** Random start delay (0.2s - 3.0s) just like in real F1 to prevent guessing.
-- **Precision:** Reaction time measured in milliseconds.
-
-## 🛠️ Tech Stack
-
-- **HTML5:** Semantic structure.
-- **CSS3:** Custom animations, gradients, and responsive design.
-- **JavaScript (ES6+):** Game logic, state management, and DOM manipulation.
-
-## 🚀 Installation & Usage
-
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/felixcwj/F1_Driver_Reaction_Test.git
-    ```
-2.  Navigate to the project directory:
-    ```bash
-    cd F1_Driver_Reaction_Test
-    ```
-3.  Open `index.html` in your web browser.
+- **Single File:** All HTML, CSS, and JavaScript are contained within `index.html` for portability and performance.
+- **Responsive:** optimized for both Desktop and Mobile (touch support included).
 
 ## 📝 License
 
-This project is open source and available under the [MIT License](LICENSE).
+MIT License
