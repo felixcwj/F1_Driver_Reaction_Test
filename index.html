@@ -84,6 +84,41 @@
             box-shadow: inset 0 0 100px #000;
         }
 
+        /* Neon Track Lanes */
+        .track-surface::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%,
+                transparent 8%,
+                var(--neon-accent) 8%,
+                var(--neon-accent) 10%,
+                transparent 10%,
+                transparent 18%
+            );
+            opacity: 0.3;
+            filter: blur(1px);
+        }
+
+        /* Center neon line */
+        .track-surface::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--neon-accent) 0%, transparent 100%);
+            box-shadow: 0 0 10px var(--neon-accent), 0 0 20px var(--neon-accent);
+        }
+
         /* Floodlights (Singapore Vibe) */
         .floodlights-left, .floodlights-right {
             position: absolute;
@@ -225,14 +260,19 @@
             margin-bottom: 30px;
         }
 
-        h1 {
+        /* Title - Top Left */
+        .page-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
             font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 2.5rem;
+            font-weight: 700;
+            font-size: 1rem;
             text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px var(--neon-accent);
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--neon-accent);
+            opacity: 0.9;
         }
 
         .status-message {
@@ -339,7 +379,7 @@
         @media (max-width: 600px) {
             .gantry { gap: 5px; padding: 10px; margin-bottom: 30px; }
             .light { width: 35px; height: 35px; }
-            h1 { font-size: 1.5rem; }
+            .page-title { font-size: 0.8rem; }
             .status-message { font-size: 2rem; }
             .launch-btn { padding: 15px 40px; font-size: 1.2rem; }
             .floodlights-left, .floodlights-right { width: 10px; }
@@ -359,6 +399,9 @@
     <!-- COCKPIT OVERLAY -->
     <div class="cockpit-visor"></div>
 
+    <!-- TITLE -->
+    <div class="page-title">F1 REACTION TEST</div>
+
     <!-- THEME TOGGLE -->
     <div class="theme-toggle" id="themeToggle">
         <span class="toggle-label">MODE</span>
@@ -370,7 +413,6 @@
     <!-- GAME UI -->
     <div class="game-ui">
         <div class="info-panel">
-            <h1>F1 Reaction Test</h1>
             <div id="status" class="status-message"></div>
         </div>
 
