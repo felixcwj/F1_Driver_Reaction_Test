@@ -1,4 +1,4 @@
-# F1 Driver Reaction Test (Singapore GP Edition) 🏎️🇸🇬
+# F1 Driver Reaction Test 🏎️🇸🇬
 
 **"It's lights out and away we go!"**
 
