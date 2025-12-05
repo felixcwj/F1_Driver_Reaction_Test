@@ -92,6 +92,116 @@
 
 
 
+      /* --- Singapore Cityscape Graphics --- */
+      .cityscape {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 0; /* Behind track */
+        perspective: 1000px;
+      }
+
+      /* Generic Skyline (Background Buildings) */
+      .skyline-far {
+        position: absolute;
+        bottom: 45%; /* Horizon line */
+        left: 0; width: 100%; height: 20%;
+        background: 
+            linear-gradient(to top, #000 0%, transparent 100%),
+            repeating-linear-gradient(90deg, #111 0px, #111 10px, transparent 10px, transparent 15px),
+            repeating-linear-gradient(90deg, #0a0a0a 0px, #0a0a0a 20px, transparent 20px, transparent 40px);
+        opacity: 0.7;
+        filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.2));
+      }
+
+      /* Marina Bay Sands (MBS) */
+      .mbs-complex {
+        position: absolute;
+        bottom: 45%;
+        left: 60%; /* Right side of track */
+        width: 120px; height: 150px;
+        transform: scale(0.8);
+      }
+      .mbs-tower {
+        position: absolute;
+        bottom: 0; width: 25px; height: 100%;
+        background: linear-gradient(to bottom, #00d2ff, #000);
+        border: 1px solid rgba(255,255,255,0.3);
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+      }
+      .mbs-tower.t1 { left: 0; height: 90%; transform: skewX(-5deg); }
+      .mbs-tower.t2 { left: 35px; height: 95%; }
+      .mbs-tower.t3 { left: 70px; height: 90%; transform: skewX(5deg); }
+      
+      .mbs-skypark {
+        position: absolute;
+        top: -10px; left: -20px;
+        width: 160px; height: 20px;
+        background: #fff;
+        border-radius: 10px 10px 50% 50%;
+        transform: rotate(-5deg);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+      }
+
+      /* Singapore Flyer */
+      .singapore-flyer {
+        position: absolute;
+        bottom: 45%;
+        left: 20%; /* Left side */
+        width: 100px; height: 100px;
+        animation: rotateFlyer 60s linear infinite;
+      }
+      .flyer-rim {
+        width: 100%; height: 100%;
+        border: 4px solid #ff00de;
+        border-radius: 50%;
+        box-shadow: 0 0 20px #ff00de, inset 0 0 10px #ff00de;
+      }
+      .flyer-spokes {
+        position: absolute;
+        top: 50%; left: 50%;
+        width: 100%; height: 2px;
+        background: rgba(255, 0, 222, 0.5);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 5px #ff00de;
+      }
+      .flyer-spokes::before, .flyer-spokes::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: inherit;
+      }
+      .flyer-spokes::before { transform: rotate(60deg); }
+      .flyer-spokes::after { transform: rotate(120deg); }
+
+      @keyframes rotateFlyer {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      /* Gardens by the Bay (Supertrees) */
+      .supertrees {
+        position: absolute;
+        bottom: 45%;
+        left: 75%;
+        width: 80px; height: 100px;
+      }
+      .tree {
+        position: absolute;
+        bottom: 0;
+        width: 10px; height: 60px;
+        background: linear-gradient(to top, #8800ff, #ff00de);
+        border-radius: 5px 5px 0 0;
+        box-shadow: 0 0 15px #ff00de;
+      }
+      .tree::after { /* Tree Top */
+        content: ''; position: absolute; top: -15px; left: -10px;
+        width: 30px; height: 20px;
+        border-top: 2px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #fff;
+      }
+      .tree.t1 { left: 0; height: 50px; }
+      .tree.t2 { left: 25px; height: 70px; z-index: 2; }
+      .tree.t3 { left: 50px; height: 40px; }
+
       .track-surface {
         position: absolute;
         bottom: -20%;
@@ -438,6 +548,26 @@
   <body>
     <div class="world-container">
       <div class="sky"></div>
+      
+      <!-- Singapore Cityscape -->
+      <div class="cityscape">
+        <div class="skyline-far"></div>
+        <div class="mbs-complex">
+          <div class="mbs-tower t1"></div>
+          <div class="mbs-tower t2"></div>
+          <div class="mbs-tower t3"></div>
+          <div class="mbs-skypark"></div>
+        </div>
+        <div class="singapore-flyer">
+          <div class="flyer-rim"></div>
+          <div class="flyer-spokes"></div>
+        </div>
+        <div class="supertrees">
+          <div class="tree t1"></div>
+          <div class="tree t2"></div>
+          <div class="tree t3"></div>
+        </div>
+      </div>
       <div class="track-surface">
         <div class="track-lines"></div>
         <div class="center-line"></div>
