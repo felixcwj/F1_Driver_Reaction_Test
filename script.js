@@ -4,7 +4,6 @@ const actionBtn = document.getElementById('action-btn');
 const messageArea = document.getElementById('message-area');
 const themeSwitch = document.getElementById('checkbox');
 const body = document.body;
-
 // Game States
 const STATE = {
     IDLE: 'IDLE',
@@ -13,19 +12,16 @@ const STATE = {
     STARTED: 'STARTED', // Lights out, timer running
     ENDED: 'ENDED'      // Result shown
 };
-
 let currentState = STATE.IDLE;
 let startTime = 0;
 let timeoutIds = [];
 let randomDelayTimeoutId = null;
-
 // Audio (Optional - can add later, keeping it visual for now as per requirements)
 
 // Theme Toggle
 themeSwitch.addEventListener('change', () => {
     body.classList.toggle('night-mode');
 });
-
 // Button Handler
 actionBtn.addEventListener('click', handleAction);
 // Also allow Spacebar
@@ -34,7 +30,6 @@ document.addEventListener('keydown', (e) => {
         handleAction();
     }
 });
-
 function handleAction() {
     switch (currentState) {
         case STATE.IDLE:
@@ -76,12 +71,10 @@ function startSequence() {
     messageArea.className = 'message hidden'; // Reset classes
     actionBtn.textContent = 'WAIT...';
     actionBtn.style.backgroundColor = '#555';
-    
     // Clear any existing timeouts
     timeoutIds.forEach(id => clearTimeout(id));
     timeoutIds = [];
     if (randomDelayTimeoutId) clearTimeout(randomDelayTimeoutId);
-
     // Sequence: 1s interval for each of the 5 pods
     for (let i = 0; i < 5; i++) {
         let id = setTimeout(() => {
@@ -103,7 +96,6 @@ function startSequence() {
 function startRandomDelay() {
     // Random delay between 0.2s (200ms) and 3.0s (3000ms)
     const delay = Math.floor(Math.random() * 2800) + 200;
-    
     randomDelayTimeoutId = setTimeout(() => {
         if (currentState !== STATE.READY) return;
         go();
@@ -132,13 +124,11 @@ function triggerFalseStart() {
     // Cancel everything
     timeoutIds.forEach(id => clearTimeout(id));
     if (randomDelayTimeoutId) clearTimeout(randomDelayTimeoutId);
-    
     currentState = STATE.ENDED;
     
     messageArea.textContent = "JUMP START! PENALTY";
     messageArea.className = "message penalty";
     messageArea.classList.remove('hidden');
-    
     // Flash lights to indicate error
     setAllLights(true);
     setTimeout(() => setAllLights(false), 200);
@@ -149,14 +139,16 @@ function triggerFalseStart() {
 }
 
 function displayResult(time) {
-    const formattedTime = time.toFixed(3); // 3 decimal places
-    messageArea.textContent = `${formattedTime} ms`;
+    const formattedTime = time.toFixed(3);
+    // 3 decimal places
+    messageArea.textContent = ${formattedTime} ms;
     messageArea.className = "message success";
     messageArea.classList.remove('hidden');
 }
 
 function resetButton() {
     actionBtn.textContent = 'RESTART';
-    actionBtn.style.backgroundColor = ''; // Reset to default CSS
+    actionBtn.style.backgroundColor = '';
+    // Reset to default CSS
     actionBtn.style.color = '';
 }

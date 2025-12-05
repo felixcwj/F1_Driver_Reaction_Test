@@ -184,7 +184,8 @@ input:checked + .slider:before {
 .light-pod {
   display: flex;
   flex-direction: column;
-  gap: 5px; /* Usually F1 lights are pairs, but for simplicity we can just show the main red lights or pairs */
+  gap: 5px;
+  /* Usually F1 lights are pairs, but for simplicity we can just show the main red lights or pairs */
 }
 
 /* We will use the bottom light as the main indicator for this simple test, or both */

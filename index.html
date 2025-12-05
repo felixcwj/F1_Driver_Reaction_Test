@@ -1,639 +1,612 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Start Reaction Test | Singapore GP Edition</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>F1 Reaction Test | Wide Track</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Titillium+Web:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root {
-            /* Singapore Night Mode (Default) */
-            --bg-sky: #050508;
-            --bg-track: #1a1a1a;
-            --floodlight-color: rgba(255, 255, 255, 0.8);
-            --floodlight-glow: rgba(255, 255, 255, 0.4);
-            --neon-accent: #00ffcc; /* Petronas/Singapore vibes */
-            --text-color: #fff;
-            --light-off: #222;
-            --light-red: #ff0000;
-            --light-red-glow: 0 0 30px #ff0000, 0 0 60px #ff0000;
-            --cockpit-border: #080808;
-            --ui-bg: rgba(0, 0, 0, 0.7);
-        }
+      :root {
+        /* 기본: 싱가포르 나이트 모드 */
+        --bg-sky: #050508;
+        --bg-track: #151515;
+        --neon-accent: #00ffcc;
+        --text-color: #fff;
+        --light-off: #222;
+        --light-red: #ff0000;
+        --light-red-glow: 0 0 30px #ff0000, 0 0 60px #ff0000;
+        --cockpit-border: #000;
+      }
 
-        body.day-mode {
-            /* Monza Day Mode */
-            --bg-sky: #87CEEB;
-            --bg-track: #333;
-            --floodlight-color: transparent;
-            --floodlight-glow: transparent;
-            --neon-accent: #e10600; /* Ferrari Red */
-            --text-color: #fff;
-            --light-off: #3a3a3a;
-            --light-red: #ff0000;
-            --light-red-glow: 0 0 10px #ff0000; /* Less glow in day */
-            --cockpit-border: #111;
-            --ui-bg: rgba(0, 0, 0, 0.5);
-        }
+      body.day-mode {
+        /* 낮 모드 */
+        --bg-sky: #87ceeb;
+        --bg-track: #3a3a3a;
+        --neon-accent: #ffffff;
+        --text-color: #fff;
+        --light-off: #3a3a3a;
+        --light-red: #ff0000;
+        --light-red-glow: 0 0 10px #ff0000;
+        --cockpit-border: #111;
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+      }
 
-        body {
-            font-family: 'Titillium Web', sans-serif;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            background-color: var(--bg-sky);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.5s ease;
-        }
+      body {
+        font-family: "Titillium Web", sans-serif;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        background-color: var(--bg-sky);
+        color: var(--text-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.5s ease;
+      }
 
-        /* --- IMMERSIVE BACKGROUND (Track & Floodlights) --- */
-        .world-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            perspective: 1000px;
-            z-index: 1;
-            overflow: hidden;
-        }
+      /* --- 배경 (넓은 트랙) --- */
+      .world-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        perspective: 600px;
+        z-index: 1;
+        overflow: hidden;
+      }
 
-        .track-surface {
-            position: absolute;
-            bottom: -50%;
-            left: 50%;
-            transform: translateX(-50%) rotateX(60deg) translateY(20%);
-            transform-origin: 50% 100%;
-            width: 80%;
-            height: 120%;
-            background: linear-gradient(to bottom, var(--bg-track) 0%, #000 100%);
-            box-shadow: inset 0 0 100px #000;
-            clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%);
-        }
+      .sky {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50%;
+        background: linear-gradient(
+          to bottom,
+          var(--bg-sky) 0%,
+          transparent 100%
+        );
+      }
 
-        /* Neon Track Lanes - Inverted V (ㅅ shape) */
-        .track-lanes {
-            position: absolute;
-            bottom: -50%;
-            left: 50%;
-            transform: translateX(-50%) rotateX(60deg) translateY(20%);
-            transform-origin: 50% 100%;
-            width: 80%;
-            height: 120%;
-            z-index: 2;
-        }
+      .track-surface {
+        position: absolute;
+        bottom: -20%;
+        left: 50%;
+        width: 400%; /* 넓은 시야 */
+        height: 100%;
+        transform: translateX(-50%) rotateX(80deg);
+        background: radial-gradient(
+          circle at 50% 0%,
+          #333 0%,
+          var(--bg-track) 60%
+        );
+        box-shadow: inset 0 0 100px #000;
+        clip-path: polygon(45% 0%, 55% 0%, 100% 100%, 0% 100%);
+      }
 
-        /* Left lane line */
-        .track-lanes::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 35%;
-            width: 3px;
-            height: 100%;
-            background: linear-gradient(to bottom, var(--neon-accent) 0%, transparent 100%);
-            box-shadow: 0 0 10px var(--neon-accent), 0 0 20px var(--neon-accent);
-            transform-origin: top;
-            transform: skewX(-15deg);
-        }
+      .track-lines::before,
+      .track-lines::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 20px;
+        background: var(--neon-accent);
+        box-shadow: 0 0 20px var(--neon-accent);
+      }
+      .track-lines::before {
+        left: 10%;
+      }
+      .track-lines::after {
+        right: 10%;
+      }
 
-        /* Right lane line */
-        .track-lanes::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 35%;
-            width: 3px;
-            height: 100%;
-            background: linear-gradient(to bottom, var(--neon-accent) 0%, transparent 100%);
-            box-shadow: 0 0 10px var(--neon-accent), 0 0 20px var(--neon-accent);
-            transform-origin: top;
-            transform: skewX(15deg);
-        }
+      .center-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 4px;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.3) 0%,
+          rgba(255, 255, 255, 0.3) 10%,
+          transparent 10%,
+          transparent 20%
+        );
+        transform: translateX(-50%);
+        opacity: 0.5;
+      }
 
-        /* Floodlights (Singapore Vibe) - Multiple colorful beams */
-        .floodlight-beam {
-            position: absolute;
-            bottom: 30%;
-            width: 150px;
-            height: 300px;
-            opacity: 0.4;
-            filter: blur(40px);
-            pointer-events: none;
-        }
+      /* --- 콕핏 바이저 --- */
+      .cockpit-visor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 50%,
+          rgba(0, 0, 0, 0.4) 60%,
+          var(--cockpit-border) 80%
+        );
+      }
+      .cockpit-visor::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 15%;
+        background: var(--cockpit-border);
+        border-bottom: 4px solid #222;
+        border-bottom-left-radius: 50% 30%;
+        border-bottom-right-radius: 50% 30%;
+      }
+      .cockpit-visor::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 25%;
+        background: var(--cockpit-border);
+        border-top: 4px solid #222;
+        border-top-left-radius: 40% 30%;
+        border-top-right-radius: 40% 30%;
+      }
 
-        .floodlight-beam:nth-child(1) {
-            left: 5%;
-            background: linear-gradient(to top, transparent, rgba(0, 255, 204, 0.6));
-            transform: rotate(-10deg);
-        }
+      /* --- UI 요소 --- */
+      .game-ui {
+        position: relative;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 12vh;
+        width: 100%;
+        height: 100%;
+      }
 
-        .floodlight-beam:nth-child(2) {
-            left: 15%;
-            background: linear-gradient(to top, transparent, rgba(255, 0, 255, 0.5));
-            transform: rotate(-5deg);
-        }
+      .page-title {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        font-family: "Orbitron";
+        font-weight: 700;
+        color: var(--neon-accent);
+        text-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+      }
 
-        .floodlight-beam:nth-child(3) {
-            right: 5%;
-            background: linear-gradient(to top, transparent, rgba(0, 255, 204, 0.6));
-            transform: rotate(10deg);
-        }
+      .gantry {
+        display: flex;
+        gap: 12px;
+        background: #111;
+        padding: 15px 25px;
+        border-radius: 12px;
+        border: 2px solid #333;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        margin-bottom: 20px;
+        transform: perspective(800px) rotateX(10deg);
+      }
 
-        .floodlight-beam:nth-child(4) {
-            right: 15%;
-            background: linear-gradient(to top, transparent, rgba(255, 100, 0, 0.5));
-            transform: rotate(5deg);
-        }
+      .light-pod {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #000;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid #333;
+      }
 
-        body.day-mode .floodlight-beam {
-            opacity: 0;
-        }
+      .light {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--light-off);
+        border: 2px solid #000;
+        transition: background-color 0.05s, box-shadow 0.05s;
+      }
 
-        /* Sky Gradient */
-        .sky {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60%;
-            background: linear-gradient(to bottom, var(--bg-sky) 0%, transparent 100%);
-            z-index: 0;
-        }
+      /* 불 들어왔을 때 클래스 */
+      .light.on {
+        background-color: var(--light-red);
+        box-shadow: var(--light-red-glow);
+      }
 
-        /* --- COCKPIT VISOR OVERLAY --- */
-        .cockpit-visor {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 100;
-            pointer-events: none;
-            /* The Visor Shape */
-            background: radial-gradient(
-                ellipse at center, 
-                transparent 55%, 
-                rgba(0,0,0,0.2) 60%, 
-                var(--cockpit-border) 75%
-            );
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
-        }
-        
-        /* Top Strip of Helmet */
-        .cockpit-visor::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 12%;
-            background: var(--cockpit-border);
-            border-bottom: 3px solid #333;
-            border-bottom-left-radius: 50% 20%;
-            border-bottom-right-radius: 50% 20%;
-        }
+      .info-panel {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .status-message {
+        font-family: "Orbitron";
+        font-size: 3.5rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 0 #000;
+      }
+      .status-message.success {
+        color: #00ff00;
+        text-shadow: 0 0 25px #00ff00;
+      }
+      .status-message.penalty {
+        color: #ff0000;
+        text-shadow: 0 0 25px #ff0000;
+        animation: shake 0.4s;
+      }
 
-        /* Bottom Chin Bar */
-        .cockpit-visor::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 20%;
-            background: var(--cockpit-border);
-            border-top: 3px solid #333;
-            border-top-left-radius: 40% 30%;
-            border-top-right-radius: 40% 30%;
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
         }
-
-        /* --- GAME UI --- */
-        .game-ui {
-            position: relative;
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            width: 100%;
-            height: 100%;
-            padding-top: 15vh; /* Move lights higher for helmet POV */
+        25% {
+          transform: translateX(-10px);
         }
-
-        /* F1 START LIGHTS GANTRY */
-        .gantry {
-            display: flex;
-            gap: 15px;
-            background: #111;
-            padding: 20px 30px;
-            border-radius: 10px;
-            border: 2px solid #333;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            margin-bottom: 40px;
-            transform: perspective(800px) rotateX(5deg);
+        75% {
+          transform: translateX(10px);
         }
+      }
 
-        .light-pod {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: #000;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
+      .launch-btn {
+        background: linear-gradient(145deg, #222, #000);
+        color: #fff;
+        border: 2px solid #444;
+        padding: 18px 50px;
+        border-radius: 50px;
+        font-family: "Orbitron";
+        font-size: 1.4rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        transition: all 0.1s;
+      }
+      .launch-btn:active {
+        transform: translateY(2px);
+      }
+      .launch-btn:hover {
+        border-color: var(--neon-accent);
+        color: var(--neon-accent);
+      }
 
-        .light {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--light-off);
-            border: 2px solid #000;
-            position: relative;
-            transition: background-color 0.05s, box-shadow 0.05s;
-        }
+      /* 테마 토글 */
+      .theme-toggle {
+        position: absolute;
+        top: 25px;
+        right: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid #444;
+        cursor: pointer;
+      }
+      .toggle-switch {
+        width: 36px;
+        height: 18px;
+        background: #333;
+        border-radius: 10px;
+        position: relative;
+      }
+      .toggle-knob {
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: 0.3s;
+      }
+      body.day-mode .toggle-switch {
+        background: #ff0000;
+      }
+      body.day-mode .toggle-knob {
+        transform: translateX(18px);
+      }
+      .toggle-label {
+        font-size: 0.7rem;
+        font-weight: bold;
+      }
+      /* --- 사이드 배리어 (화려한 싱가포르 스타일) --- */
+      .barrier-left,
+      .barrier-right {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 300px;
+        background: repeating-linear-gradient(
+          to bottom,
+          #222 0%,
+          #222 40%,
+          #444 40%,
+          #444 50%
+        );
+        transform-origin: center;
+        box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+      }
+      .barrier-left {
+        left: -25%;
+        transform: rotateY(90deg) translateX(50%);
+        border-right: 4px solid var(--neon-accent);
+        border-left: 2px solid #ff00de; /* 마젠타 포인트 */
+      }
+      .barrier-right {
+        right: -25%;
+        transform: rotateY(-90deg) translateX(-50%);
+        border-left: 4px solid var(--neon-accent);
+        border-right: 2px solid #ff00de; /* 마젠타 포인트 */
+      }
 
-        /* Inner reflection for realism */
-        .light::after {
-            content: '';
-            position: absolute;
-            top: 10%;
-            left: 20%;
-            width: 30%;
-            height: 30%;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-        }
+      /* --- 전광판 (Billboards) --- */
+      .billboard {
+        position: absolute;
+        width: 120px; height: 60px;
+        background: #000;
+        border: 2px solid #fff;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        color: #fff;
+        font-family: "Orbitron";
+        font-weight: bold;
+        font-size: 1.2rem;
+        display: flex; align-items: center; justify-content: center;
+        transform-style: preserve-3d;
+      }
+      .left-1 { top: 20%; left: 10%; transform: rotateY(60deg); background: linear-gradient(45deg, #004400, #00ff00); box-shadow: 0 0 30px #00ff00; }
+      .right-1 { top: 20%; right: 10%; transform: rotateY(-60deg); background: linear-gradient(45deg, #000044, #0088ff); box-shadow: 0 0 30px #0088ff; }
+      .left-2 { top: 40%; left: 5%; transform: rotateY(60deg) scale(0.8); background: linear-gradient(45deg, #440000, #ff0000); box-shadow: 0 0 30px #ff0000; }
+      .right-2 { top: 40%; right: 5%; transform: rotateY(-60deg) scale(0.8); background: linear-gradient(45deg, #444400, #ffff00); box-shadow: 0 0 30px #ffff00; }
 
-        .light.on {
-            background-color: var(--light-red);
-            box-shadow: var(--light-red-glow);
-        }
+      /* --- 강력한 조명 효과 (싱가포르 스타일) --- */
+      .floodlight-glow {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
 
-        /* CONTROLS & INFO */
-        .info-panel {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        /* Title - Top Left */
-        .page-title {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 200;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px var(--neon-accent);
-            opacity: 0.9;
-        }
-
-        .status-message {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            font-weight: 700;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-shadow: 2px 2px 0 #000;
-        }
-
-        .status-message.success { color: #00ff00; text-shadow: 0 0 20px #00ff00; }
-        .status-message.penalty { color: #ff0000; text-shadow: 0 0 20px #ff0000; animation: shake 0.5s; }
-        .status-message.waiting { color: #ffff00; }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            75% { transform: translateX(-10px); }
-            100% { transform: translateX(0); }
-        }
-
-        /* LAUNCH BUTTON (Steering Wheel Style) */
-        .launch-btn {
-            background: linear-gradient(145deg, #333, #111);
-            color: #fff;
-            border: 2px solid #555;
-            padding: 20px 60px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.1);
-            transition: all 0.1s;
-            outline: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .launch-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            background: #000;
-        }
-
-        /* Neon glow on hover/active based on theme */
-        .launch-btn:hover {
-            border-color: var(--neon-accent);
-            box-shadow: 0 0 15px var(--neon-accent);
-        }
-
-        /* THEME TOGGLE */
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 200; /* Above visor */
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid #444;
-            cursor: pointer;
-        }
-
-        .toggle-switch {
-            width: 40px;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            position: relative;
-            transition: background 0.3s;
-        }
-
-        .toggle-knob {
-            width: 16px;
-            height: 16px;
-            background: #fff;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
-        }
-
-        .active .toggle-switch { background: var(--neon-accent); }
-        .active .toggle-knob { transform: translateX(20px); }
-
-        .toggle-label {
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        /* MOBILE RESPONSIVENESS */
-        @media (max-width: 600px) {
-            .gantry { gap: 5px; padding: 10px; margin-bottom: 30px; }
-            .light { width: 35px; height: 35px; }
-            .page-title { font-size: 0.8rem; }
-            .status-message { font-size: 2rem; }
-            .launch-btn { padding: 15px 40px; font-size: 1.2rem; }
-            .floodlights-left, .floodlights-right { width: 10px; }
-        }
+      .overhead-lights {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 50%;
+        perspective: 600px; pointer-events: none;
+      }
+      .light-beam {
+        position: absolute;
+        top: 0; left: 50%; transform: translateX(-50%);
+        width: 150%; height: 6px;
+        background: #fff;
+        box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.8), 0 0 100px 40px rgba(200, 200, 255, 0.4);
+        border-radius: 50%;
+      }
+      .lb-1 { top: 10%; opacity: 0.4; width: 80%; }
+      .lb-2 { top: 22%; opacity: 0.6; width: 90%; }
+      .lb-3 { top: 34%; opacity: 0.8; width: 100%; }
+      .lb-4 { top: 46%; opacity: 0.9; width: 110%; }
+      .lb-5 { top: 58%; opacity: 1.0; width: 120%; }
     </style>
-</head>
-<body>
-
-    <!-- IMMERSIVE BACKGROUND -->
+  </head>
+  <body>
     <div class="world-container">
-        <div class="sky"></div>
-        <div class="track-surface"></div>
-        <div class="track-lanes"></div>
-        <div class="floodlight-beam"></div>
-        <div class="floodlight-beam"></div>
-        <div class="floodlight-beam"></div>
-        <div class="floodlight-beam"></div>
+      <div class="sky"></div>
+      <div class="track-surface">
+        <div class="track-lines"></div>
+        <div class="center-line"></div>
+      </div>
+
+      <!-- Side Barriers -->
+      <div class="barrier-left"></div>
+      <div class="barrier-right"></div>
+
+      <!-- Billboards (Electronic Displays) -->
+      <div class="billboard left-1"><span>ROLEX</span></div>
+      <div class="billboard right-1"><span>ARAMCO</span></div>
+      <div class="billboard left-2"><span>DHL</span></div>
+      <div class="billboard right-2"><span>PIRELLI</span></div>
+
+      <!-- Powerful Floodlights (Singapore Brightness) -->
+      <div class="floodlight-glow"></div>
+      <div class="overhead-lights">
+        <div class="light-beam lb-1"></div>
+        <div class="light-beam lb-2"></div>
+        <div class="light-beam lb-3"></div>
+        <div class="light-beam lb-4"></div>
+        <div class="light-beam lb-5"></div>
+      </div>
     </div>
 
-    <!-- COCKPIT OVERLAY -->
     <div class="cockpit-visor"></div>
-
-    <!-- TITLE -->
     <div class="page-title">F1 REACTION TEST</div>
 
-    <!-- THEME TOGGLE -->
     <div class="theme-toggle" id="themeToggle">
-        <span class="toggle-label">MODE</span>
-        <div class="toggle-switch">
-            <div class="toggle-knob"></div>
-        </div>
+      <span class="toggle-label">MODE</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
     </div>
 
-    <!-- GAME UI -->
     <div class="game-ui">
-        <div class="info-panel">
-            <div id="status" class="status-message"></div>
-        </div>
+      <div class="info-panel">
+        <div id="status" class="status-message"></div>
+      </div>
 
-        <div class="gantry">
-            <!-- 5 Light Pods -->
-            <div class="light-pod"><div class="light"></div><div class="light"></div></div>
-            <div class="light-pod"><div class="light"></div><div class="light"></div></div>
-            <div class="light-pod"><div class="light"></div><div class="light"></div></div>
-            <div class="light-pod"><div class="light"></div><div class="light"></div></div>
-            <div class="light-pod"><div class="light"></div><div class="light"></div></div>
+      <div class="gantry">
+        <div class="light-pod">
+          <div class="light"></div>
+          <div class="light"></div>
         </div>
+        <div class="light-pod">
+          <div class="light"></div>
+          <div class="light"></div>
+        </div>
+        <div class="light-pod">
+          <div class="light"></div>
+          <div class="light"></div>
+        </div>
+        <div class="light-pod">
+          <div class="light"></div>
+          <div class="light"></div>
+        </div>
+        <div class="light-pod">
+          <div class="light"></div>
+          <div class="light"></div>
+        </div>
+      </div>
 
-        <button id="launchBtn" class="launch-btn">LAUNCH CLUTCH</button>
+      <button id="launchBtn" class="launch-btn">LAUNCH CLUTCH</button>
     </div>
 
     <script>
-        // --- GAME STATE & CONSTANTS ---
-        const STATE = {
-            IDLE: 'IDLE',
-            SEQUENCE: 'SEQUENCE', // Lights turning on
-            READY: 'READY',       // All lights on, waiting for random delay
-            STARTED: 'STARTED',   // Lights out, timer running
-            ENDED: 'ENDED'        // Result shown
-        };
+      const STATE = {
+        IDLE: "IDLE",
+        SEQUENCE: "SEQUENCE",
+        READY: "READY",
+        STARTED: "STARTED",
+        ENDED: "ENDED",
+      };
+      let currentState = STATE.IDLE;
+      let startTime = 0;
+      let timers = [];
 
-        let currentState = STATE.IDLE;
-        let startTime = 0;
-        let sequenceTimeouts = [];
-        let randomDelayTimeout = null;
+      const launchBtn = document.getElementById("launchBtn");
+      const statusEl = document.getElementById("status");
+      const lightPods = document.querySelectorAll(".light-pod");
+      const themeToggle = document.getElementById("themeToggle");
 
-        // --- DOM ELEMENTS ---
-        const launchBtn = document.getElementById('launchBtn');
-        const statusEl = document.getElementById('status');
-        const lightPods = document.querySelectorAll('.light-pod');
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
+      // 입력 처리 (클릭/터치/스페이스바)
+      const handleInput = (e) => {
+        if (e.type === "touchstart") e.preventDefault();
 
-        // --- AUDIO CONTEXT (Optional for future, strict visual requirement for now) ---
-
-        // --- EVENT LISTENERS ---
-        launchBtn.addEventListener('mousedown', handleInput); // Use mousedown for faster reaction than click
-        launchBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(); }); // Mobile optimization
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault(); // Prevent scrolling
-                handleInput();
-            }
-        });
-
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('day-mode');
-            themeToggle.classList.toggle('active');
-        });
-
-        // --- CORE LOGIC ---
-
-        function handleInput() {
-            switch (currentState) {
-                case STATE.IDLE:
-                case STATE.ENDED:
-                    startSequence();
-                    break;
-                case STATE.SEQUENCE:
-                case STATE.READY:
-                    triggerFalseStart();
-                    break;
-                case STATE.STARTED:
-                    finishRace();
-                    break;
-            }
+        if (currentState === STATE.IDLE || currentState === STATE.ENDED) {
+          startSequence();
+        } else if (
+          currentState === STATE.SEQUENCE ||
+          currentState === STATE.READY
+        ) {
+          triggerFalseStart();
+        } else if (currentState === STATE.STARTED) {
+          finishRace();
         }
+      };
 
-        function startSequence() {
-            // Reset Game
-            currentState = STATE.SEQUENCE;
-            resetLights();
-            statusEl.textContent = '';
-            statusEl.className = 'status-message';
-            launchBtn.textContent = 'HOLD...';
-            launchBtn.style.borderColor = '#fff';
+      launchBtn.addEventListener("mousedown", handleInput);
+      launchBtn.addEventListener("touchstart", handleInput);
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Space") handleInput(e);
+      });
 
-            // Clear any existing timers
-            clearAllTimers();
+      themeToggle.addEventListener("click", () =>
+        document.body.classList.toggle("day-mode")
+      );
 
-            // FIA Sequence: 5 lights, 1 second interval
-            // Light 1: 0s (Immediate? No, usually 1s after board reset. We'll start 1s after click)
-            
-            for (let i = 0; i < 5; i++) {
-                let t = setTimeout(() => {
-                    if (currentState !== STATE.SEQUENCE) return;
-                    turnOnPod(i);
-                    
-                    // After 5th light (index 4), move to READY
-                    if (i === 4) {
-                        currentState = STATE.READY;
-                        startRandomDelay();
-                    }
-                }, (i + 1) * 1000); // 1000ms, 2000ms, 3000ms, 4000ms, 5000ms
-                sequenceTimeouts.push(t);
-            }
+      // 게임 로직
+      function startSequence() {
+        currentState = STATE.SEQUENCE;
+        resetLights();
+        statusEl.textContent = "";
+        launchBtn.textContent = "HOLD...";
+        launchBtn.style.borderColor = "#fff";
+        launchBtn.style.color = "#fff";
+
+        clearTimers();
+
+        // 1초 간격으로 불 켜기
+        for (let i = 0; i < 5; i++) {
+          timers.push(
+            setTimeout(() => {
+              if (currentState !== STATE.SEQUENCE) return;
+              turnOnPod(i);
+              if (i === 4) {
+                currentState = STATE.READY;
+                // 5개 다 켜지면 0.2~3.0초 후 소등
+                const randomDelay = Math.random() * 2800 + 200;
+                timers.push(setTimeout(lightsOut, randomDelay));
+              }
+            }, (i + 1) * 1000)
+          );
         }
+      }
 
-        function startRandomDelay() {
-            // FIA Rule: 0.2s to 3.0s after 5th light
-            const delay = Math.random() * 2800 + 200; // 200ms to 3000ms
-            
-            randomDelayTimeout = setTimeout(() => {
-                if (currentState !== STATE.READY) return;
-                lightsOut();
-            }, delay);
-        }
+      function lightsOut() {
+        if (currentState !== STATE.READY) return;
+        setAllLights(false); // 소등
+        startTime = performance.now();
+        currentState = STATE.STARTED;
+        launchBtn.textContent = "GO! GO! GO!";
+        launchBtn.style.borderColor = "#00ff00";
+        launchBtn.style.color = "#00ff00";
+      }
 
-        function lightsOut() {
+      function finishRace() {
+        const reactionTime = performance.now() - startTime;
+        currentState = STATE.ENDED;
+        statusEl.textContent = reactionTime.toFixed(3) + " MS";
+        statusEl.className = "status-message success";
+        launchBtn.textContent = "RESTART";
+      }
+
+      function triggerFalseStart() {
+        clearTimers();
+        currentState = STATE.ENDED;
+        statusEl.textContent = "JUMP START";
+        statusEl.className = "status-message penalty";
+        launchBtn.textContent = "DISQUALIFIED";
+        launchBtn.style.borderColor = "#ff0000";
+        launchBtn.style.color = "#ff0000";
+
+        // 깜빡임 효과
+        let count = 0;
+        const flash = setInterval(() => {
+          count++;
+          setAllLights(count % 2 === 0);
+          if (count >= 6) {
+            clearInterval(flash);
             setAllLights(false);
-            startTime = performance.now();
-            currentState = STATE.STARTED;
-            launchBtn.textContent = 'GO! GO! GO!';
-            launchBtn.style.borderColor = '#00ff00';
-        }
+          }
+        }, 150);
+      }
 
-        function finishRace() {
-            const endTime = performance.now();
-            const reactionTime = endTime - startTime;
-            currentState = STATE.ENDED;
-            
-            const formattedTime = reactionTime.toFixed(3);
-            statusEl.textContent = `${formattedTime} MS`;
-            statusEl.className = 'status-message success';
-            launchBtn.textContent = 'RESTART';
-        }
+      // 유틸리티 함수
+      function turnOnPod(index) {
+        const lights = lightPods[index].querySelectorAll(".light");
+        lights.forEach((l) => l.classList.add("on"));
+      }
 
-        function triggerFalseStart() {
-            clearAllTimers();
-            currentState = STATE.ENDED;
-            
-            statusEl.textContent = 'JUMP START';
-            statusEl.className = 'status-message penalty';
-            launchBtn.textContent = 'DISQUALIFIED';
-            launchBtn.style.borderColor = '#ff0000';
+      function setAllLights(isOn) {
+        document.querySelectorAll(".light").forEach((l) => {
+          if (isOn) l.classList.add("on");
+          else l.classList.remove("on");
+        });
+      }
 
-            // Abort sequence visuals
-            // Keep lights on or flash them? Usually jump start means you moved before lights out.
-            // Let's flash all lights to indicate error.
-            flashLights();
-        }
-
-        // --- HELPERS ---
-
-        function turnOnPod(index) {
-            const pod = lightPods[index];
-            const lights = pod.querySelectorAll('.light');
-            lights.forEach(l => l.classList.add('on'));
-        }
-
-        function setAllLights(on) {
-            lightPods.forEach(pod => {
-                const lights = pod.querySelectorAll('.light');
-                lights.forEach(l => {
-                    if (on) l.classList.add('on');
-                    else l.classList.remove('on');
-                });
-            });
-        }
-
-        function resetLights() {
-            setAllLights(false);
-        }
-
-        function flashLights() {
-            let count = 0;
-            const flashInterval = setInterval(() => {
-                count++;
-                const isOn = count % 2 === 0;
-                setAllLights(!isOn); // Toggle
-                if (count >= 6) {
-                    clearInterval(flashInterval);
-                    setAllLights(false); // End off
-                }
-            }, 150);
-        }
-
-        function clearAllTimers() {
-            sequenceTimeouts.forEach(t => clearTimeout(t));
-            sequenceTimeouts = [];
-            if (randomDelayTimeout) clearTimeout(randomDelayTimeout);
-        }
-
+      function resetLights() {
+        setAllLights(false);
+      }
+      function clearTimers() {
+        timers.forEach((t) => clearTimeout(t));
+        timers = [];
+      }
     </script>
-</body>
+  </body>
 </html>
