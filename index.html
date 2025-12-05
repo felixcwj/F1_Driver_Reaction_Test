@@ -544,6 +544,87 @@
       .sl-left-2 { top: 30%; left: -5%; }
       .sl-right-2 { top: 30%; right: -5%; }
     </style>
+    <style>
+      /* --- F1 Car Nose (POV) --- */
+      .f1-car-nose {
+        position: absolute;
+        bottom: -5%; left: 50%;
+        transform: translateX(-50%);
+        width: 400px; height: 300px;
+        z-index: 50; /* Above track, below UI */
+        pointer-events: none;
+        perspective: 500px;
+      }
+
+      /* Nose Cone */
+      .nose-cone {
+        position: absolute;
+        bottom: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 120px; height: 100%;
+        background: linear-gradient(to right, #111, #222 40%, #222 60%, #111);
+        clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+        box-shadow: 0 -10px 20px rgba(0,0,0,0.8);
+      }
+      .nose-cone::after { /* Highlight */
+        content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        width: 40%; height: 100%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+      }
+      .nose-tip {
+        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        width: 60%; height: 20px;
+        background: #222;
+        border-radius: 50% 50% 0 0;
+      }
+      .nose-stripe {
+        position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+        width: 10px; height: 80%;
+        background: var(--neon-accent);
+        box-shadow: 0 0 10px var(--neon-accent);
+      }
+      .team-logo-placeholder {
+        position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+        width: 40px; height: 40px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23fff" opacity="0.2"/></svg>') no-repeat center;
+      }
+
+      /* Front Wing */
+      .front-wing-left, .front-wing-right {
+        position: absolute; bottom: 20px;
+        width: 180px; height: 60px;
+        background: linear-gradient(to bottom, #1a1a1a, #000);
+        border-top: 2px solid #444;
+      }
+      .front-wing-left {
+        left: -100px;
+        transform: skewX(20deg) rotate(-5deg);
+        border-radius: 10px 0 0 10px;
+      }
+      .front-wing-right {
+        right: -100px;
+        transform: skewX(-20deg) rotate(5deg);
+        border-radius: 0 10px 10px 0;
+      }
+
+      /* Suspension Arms */
+      .suspension-left, .suspension-right {
+        position: absolute; bottom: 100px;
+        width: 150px; height: 15px;
+        background: #111;
+        border: 1px solid #333;
+      }
+      .suspension-left {
+        left: -80px;
+        transform: rotate(-20deg);
+        transform-origin: right center;
+      }
+      .suspension-right {
+        right: -80px;
+        transform: rotate(20deg);
+        transform-origin: left center;
+      }
+    </style>
   </head>
   <body>
     <div class="world-container">
@@ -601,6 +682,19 @@
         <div class="side-light sl-right-1"></div>
         <div class="side-light sl-left-2"></div>
         <div class="side-light sl-right-2"></div>
+      </div>
+      
+      <!-- F1 Car Nose (POV) -->
+      <div class="f1-car-nose">
+        <div class="nose-cone">
+          <div class="nose-tip"></div>
+          <div class="nose-stripe"></div>
+          <div class="team-logo-placeholder"></div>
+        </div>
+        <div class="front-wing-left"></div>
+        <div class="front-wing-right"></div>
+        <div class="suspension-left"></div>
+        <div class="suspension-right"></div>
       </div>
     </div>
 
