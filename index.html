@@ -1,872 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>F1 Reaction Test | Wide Track</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Titillium+Web:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>F1 Reaction Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
-      :root {
-        /* 기본: 싱가포르 나이트 모드 */
-        --bg-sky: #050508;
-        --bg-track: #151515;
-        --neon-accent: #00ffcc;
-        --text-color: #fff;
-        --light-off: #222;
-        --light-red: #ff0000;
-        --light-red-glow: 0 0 30px #ff0000, 0 0 60px #ff0000;
-        --cockpit-border: #000;
-      }
-
-      body.day-mode {
-        /* 낮 모드 */
-        --bg-sky: #87ceeb;
-        --bg-track: #3a3a3a;
-        --neon-accent: #ffffff;
-        --text-color: #fff;
-        --light-off: #3a3a3a;
-        --light-red: #ff0000;
-        --light-red-glow: 0 0 10px #ff0000;
-        --cockpit-border: #111;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        user-select: none;
-      }
-
-      body {
-        font-family: "Titillium Web", sans-serif;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-        background-color: var(--bg-sky);
-        color: var(--text-color);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.5s ease;
-      }
-
-      /* --- 배경 (넓은 트랙) --- */
-      .world-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        perspective: 600px;
-        z-index: 1;
-        overflow: hidden;
-      }
-
-      .sky {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 60%;
-        background: linear-gradient(to bottom, #050505 0%, #1a1a1a 80%, #2a2a2a 100%);
-      }
-      .sky::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 40%;
-        background: linear-gradient(to top, rgba(0, 255, 204, 0.1) 0%, transparent 100%); /* City Glow */
-        filter: blur(20px);
-      }
-
-
-
-      /* --- Singapore Cityscape Graphics --- */
-      .cityscape {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none;
-        z-index: 0; /* Behind track */
-        perspective: 1000px;
-      }
-
-      /* Generic Skyline (Background Buildings) */
-      .skyline-far {
-        position: absolute;
-        bottom: 45%; /* Horizon line */
-        left: 0; width: 100%; height: 20%;
-        background: 
-            linear-gradient(to top, #000 0%, transparent 100%),
-            repeating-linear-gradient(90deg, #111 0px, #111 10px, transparent 10px, transparent 15px),
-            repeating-linear-gradient(90deg, #0a0a0a 0px, #0a0a0a 20px, transparent 20px, transparent 40px);
-        opacity: 0.7;
-        filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.2));
-      }
-
-      /* Marina Bay Sands (MBS) */
-      .mbs-complex {
-        position: absolute;
-        bottom: 45%;
-        left: 60%; /* Right side of track */
-        width: 120px; height: 150px;
-        transform: scale(0.8);
-      }
-      .mbs-tower {
-        position: absolute;
-        bottom: 0; width: 25px; height: 100%;
-        background: linear-gradient(to bottom, #00d2ff, #000);
-        border: 1px solid rgba(255,255,255,0.3);
-        box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
-      }
-      .mbs-tower.t1 { left: 0; height: 90%; transform: skewX(-5deg); }
-      .mbs-tower.t2 { left: 35px; height: 95%; }
-      .mbs-tower.t3 { left: 70px; height: 90%; transform: skewX(5deg); }
-      
-      .mbs-skypark {
-        position: absolute;
-        top: -10px; left: -20px;
-        width: 160px; height: 20px;
-        background: #fff;
-        border-radius: 10px 10px 50% 50%;
-        transform: rotate(-5deg);
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-      }
-
-      /* Singapore Flyer */
-      .singapore-flyer {
-        position: absolute;
-        bottom: 45%;
-        left: 20%; /* Left side */
-        width: 100px; height: 100px;
-        animation: rotateFlyer 60s linear infinite;
-      }
-      .flyer-rim {
-        width: 100%; height: 100%;
-        border: 4px solid #ff00de;
-        border-radius: 50%;
-        box-shadow: 0 0 20px #ff00de, inset 0 0 10px #ff00de;
-      }
-      .flyer-spokes {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 100%; height: 2px;
-        background: rgba(255, 0, 222, 0.5);
-        transform: translate(-50%, -50%);
-        box-shadow: 0 0 5px #ff00de;
-      }
-      .flyer-spokes::before, .flyer-spokes::after {
-        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: inherit;
-      }
-      .flyer-spokes::before { transform: rotate(60deg); }
-      .flyer-spokes::after { transform: rotate(120deg); }
-
-      @keyframes rotateFlyer {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-
-      /* Gardens by the Bay (Supertrees) */
-      .supertrees {
-        position: absolute;
-        bottom: 45%;
-        left: 75%;
-        width: 80px; height: 100px;
-      }
-      .tree {
-        position: absolute;
-        bottom: 0;
-        width: 10px; height: 60px;
-        background: linear-gradient(to top, #8800ff, #ff00de);
-        border-radius: 5px 5px 0 0;
-        box-shadow: 0 0 15px #ff00de;
-      }
-      .tree::after { /* Tree Top */
-        content: ''; position: absolute; top: -15px; left: -10px;
-        width: 30px; height: 20px;
-        border-top: 2px solid #fff;
-        border-radius: 50%;
-        box-shadow: 0 0 10px #fff;
-      }
-      .tree.t1 { left: 0; height: 50px; }
-      .tree.t2 { left: 25px; height: 70px; z-index: 2; }
-      .tree.t3 { left: 50px; height: 40px; }
-
-      .track-surface {
-        position: absolute;
-        bottom: -20%;
-        left: 50%;
-        width: 400%; /* 넓은 시야 */
-        height: 100%;
-        transform: translateX(-50%) rotateX(80deg);
-        /* Asphalt Texture Simulation */
-        background: 
-            radial-gradient(circle at 50% 0%, rgba(50,50,50,1) 0%, var(--bg-track) 60%),
-            repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 3px),
-            repeating-linear-gradient(90deg, transparent 0px, transparent 2px, rgba(0,0,0,0.1) 3px);
-        background-color: #1a1a1a;
-        box-shadow: inset 0 0 100px #000;
-        clip-path: polygon(45% 0%, 55% 0%, 100% 100%, 0% 100%);
-      }
-
-      /* --- 사이드 배리어 (Detailed Concrete/Armco) --- */
-      .barrier-left,
-      .barrier-right {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 300px;
-        background: 
-            repeating-linear-gradient(to bottom, #333 0%, #333 40%, #444 40%, #444 42%, #222 42%, #222 50%),
-            linear-gradient(to right, rgba(0,0,0,0.5), transparent); /* Shadow depth */
-        transform-origin: center;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
-      }
-      .barrier-left {
-        left: -25%;
-        transform: rotateY(90deg) translateX(50%);
-        border-right: 4px solid var(--neon-accent);
-        border-left: 2px solid #ff00de; /* 마젠타 포인트 */
-      }
-      .barrier-right {
-        right: -25%;
-        transform: rotateY(-90deg) translateX(-50%);
-        border-left: 4px solid var(--neon-accent);
-        border-right: 2px solid #ff00de; /* 마젠타 포인트 */
-      }
-
-      .track-lines::before,
-      .track-lines::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 20px;
-        background: var(--neon-accent);
-        box-shadow: 0 0 20px var(--neon-accent);
-      }
-      .track-lines::before {
-        left: 10%;
-      }
-      .track-lines::after {
-        right: 10%;
-      }
-
-      .center-line {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 50%;
-        width: 4px;
-        background: repeating-linear-gradient(
-          to bottom,
-          rgba(255, 255, 255, 0.3) 0%,
-          rgba(255, 255, 255, 0.3) 10%,
-          transparent 10%,
-          transparent 20%
-        );
-        transform: translateX(-50%);
-        opacity: 0.5;
-      }
-
-      /* --- 콕핏 바이저 --- */
-      /* --- 콕핏 바이저 (Realistic Helmet View) --- */
-      .cockpit-visor {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 100; pointer-events: none;
-        /* Vignette + Grain */
-        background: 
-            radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 80%, #000 100%),
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-      }
-      /* Helmet Top */
-      .cockpit-visor::before {
-        content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 15%;
-        background: linear-gradient(to bottom, #111, #222); /* Gradient for depth */
-        border-bottom: 4px solid #000;
-        border-bottom-left-radius: 50% 30%;
-        border-bottom-right-radius: 50% 30%;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-      }
-      /* Helmet Bottom */
-      .cockpit-visor::after {
-        content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 25%;
-        background: linear-gradient(to top, #111, #222); /* Gradient for depth */
-        border-top: 4px solid #000;
-        border-top-left-radius: 40% 30%;
-        border-top-right-radius: 40% 30%;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
-      }
-
-      /* --- UI 요소 --- */
-      .game-ui {
-        position: relative;
-        z-index: 200;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 12vh;
-        width: 100%;
-        height: 100%;
-      }
-
-      .page-title {
-        position: absolute;
-        top: 25px;
-        left: 25px;
-        font-family: "Orbitron";
-        font-weight: 700;
-        color: var(--neon-accent);
-        text-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
-      }
-
-      .gantry {
-        display: flex;
-        gap: 12px;
-        background: #111;
-        padding: 15px 25px;
-        border-radius: 12px;
-        border: 2px solid #333;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-        margin-bottom: 20px;
-        transform: perspective(800px) rotateX(10deg);
-      }
-
-      .light-pod {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        background: #000;
-        padding: 6px;
-        border-radius: 6px;
-        border: 1px solid #333;
-      }
-
-      .light {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        background: var(--light-off);
-        border: 2px solid #000;
-        transition: background-color 0.05s, box-shadow 0.05s;
-      }
-
-      /* 불 들어왔을 때 클래스 */
-      .light.on {
-        background-color: var(--light-red);
-        box-shadow: var(--light-red-glow);
-      }
-
-      .info-panel {
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 20px;
-      }
-      .status-message {
-        font-family: "Orbitron";
-        font-size: 3.5rem;
-        font-weight: 700;
-        text-shadow: 2px 2px 0 #000;
-      }
-      .status-message.success {
-        color: #00ff00;
-        text-shadow: 0 0 25px #00ff00;
-      }
-      .status-message.penalty {
-        color: #ff0000;
-        text-shadow: 0 0 25px #ff0000;
-        animation: shake 0.4s;
-      }
-
-      @keyframes shake {
-        0%,
-        100% {
-          transform: translateX(0);
-        }
-        25% {
-          transform: translateX(-10px);
-        }
-        75% {
-          transform: translateX(10px);
-        }
-      }
-
-      .launch-btn {
-        background: linear-gradient(145deg, #222, #000);
-        color: #fff;
-        border: 2px solid #444;
-        padding: 18px 50px;
-        border-radius: 50px;
-        font-family: "Orbitron";
-        font-size: 1.4rem;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-        transition: all 0.1s;
-      }
-      .launch-btn:active {
-        transform: translateY(2px);
-      }
-      .launch-btn:hover {
-        border-color: var(--neon-accent);
-        color: var(--neon-accent);
-      }
-
-      /* 테마 토글 */
-      .theme-toggle {
-        position: absolute;
-        top: 25px;
-        right: 25px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: rgba(0, 0, 0, 0.6);
-        padding: 6px 12px;
-        border-radius: 20px;
-        border: 1px solid #444;
-        cursor: pointer;
-      }
-      .toggle-switch {
-        width: 36px;
-        height: 18px;
-        background: #333;
-        border-radius: 10px;
-        position: relative;
-      }
-      .toggle-knob {
-        width: 14px;
-        height: 14px;
-        background: #fff;
-        border-radius: 50%;
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        transition: 0.3s;
-      }
-      body.day-mode .toggle-switch {
-        background: #ff0000;
-      }
-      body.day-mode .toggle-knob {
-        transform: translateX(18px);
-      }
-      .toggle-label {
-        font-size: 0.7rem;
-        font-weight: bold;
-      }
-
-
-      /* --- 전광판 (Billboards - Real Sponsors) --- */
-      .billboard {
-        position: absolute;
-        width: 140px; height: 50px;
-        background: #000;
-        border: 2px solid #fff;
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); /* Reduced Glow */
-        color: #fff;
-        font-family: "Titillium Web", sans-serif;
-        font-weight: 900;
-        font-size: 1.1rem;
-        display: flex; align-items: center; justify-content: center;
-        transform-style: preserve-3d;
-        text-align: center;
-        line-height: 1;
-        letter-spacing: 1px;
-      }
-      
-      /* Sponsor Specific Styles - Balanced for Realism */
-      .sponsor-sia { background: #002561; color: #fcae1d; border-color: #fcae1d; box-shadow: 0 0 20px rgba(252, 174, 29, 0.5); }
-      .sponsor-rolex { background: #006039; color: #ffd700; border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-      .sponsor-dhl { background: #ffcc00; color: #d40511; border-color: #d40511; box-shadow: 0 0 20px rgba(212, 5, 17, 0.5); }
-      .sponsor-heineken { background: #008200; color: #fff; border-color: #ff0000; box-shadow: 0 0 20px rgba(0, 130, 0, 0.5); }
-      .sponsor-aramco { background: #00a3e0; color: #fff; border-color: #88d750; box-shadow: 0 0 20px rgba(0, 163, 224, 0.5); }
-      .sponsor-pirelli { background: #d52b1e; color: #fff; border-color: #ffd700; box-shadow: 0 0 20px rgba(213, 43, 30, 0.5); }
-
-      /* Positions - Adjusted for Cockpit Perspective */
-      .left-1 { top: 15%; left: 12%; transform: rotateY(70deg); }
-      .right-1 { top: 15%; right: 12%; transform: rotateY(-70deg); }
-      .left-2 { top: 30%; left: 8%; transform: rotateY(70deg) scale(0.9); }
-      .right-2 { top: 30%; right: 8%; transform: rotateY(-70deg) scale(0.9); }
-      .left-3 { top: 45%; left: 5%; transform: rotateY(70deg) scale(0.8); }
-      .right-3 { top: 45%; right: 5%; transform: rotateY(-70deg) scale(0.8); }
-
-      /* --- 조명 효과 (Realistic Singapore Night - 50% Intensity) --- */
-      .floodlight-glow {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 80%); /* Reduced Opacity */
-        pointer-events: none;
-        mix-blend-mode: screen;
-      }
-
-      .overhead-lights {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 60%;
-        perspective: 600px; pointer-events: none;
-      }
-      
-      /* Main Track Lights (Overhead) - Refined */
-      .light-beam {
-        position: absolute;
-        top: 0; left: 50%; transform: translateX(-50%);
-        width: 180%; height: 6px; /* Thinner */
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 0 50px 20px rgba(255, 255, 255, 0.5), 0 0 80px 30px rgba(200, 220, 255, 0.3); /* Reduced Spread */
-        border-radius: 50%;
-      }
-      .lb-1 { top: 8%; opacity: 0.4; width: 80%; }
-      .lb-2 { top: 18%; opacity: 0.5; width: 90%; }
-      .lb-3 { top: 28%; opacity: 0.6; width: 100%; }
-      .lb-4 { top: 38%; opacity: 0.7; width: 110%; }
-      .lb-5 { top: 48%; opacity: 0.8; width: 120%; }
-      .lb-6 { top: 58%; opacity: 0.9; width: 130%; }
-
-      /* Side Floodlights (Illuminating Barriers) - Subtle */
-      .side-light {
-        position: absolute;
-        width: 200px; height: 200px;
-        background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); /* Reduced Opacity */
-        mix-blend-mode: screen;
-      }
-      .sl-left-1 { top: 10%; left: -10%; }
-      .sl-right-1 { top: 10%; right: -10%; }
-      .sl-left-2 { top: 30%; left: -5%; }
-      .sl-right-2 { top: 30%; right: -5%; }
-    </style>
-    <style>
-      /* --- F1 Car Nose (POV) --- */
-      .f1-car-nose {
-        position: absolute;
-        bottom: -5%; left: 50%;
-        transform: translateX(-50%);
-        width: 400px; height: 300px;
-        z-index: 50; /* Above track, below UI */
-        pointer-events: none;
-        perspective: 500px;
-      }
-
-      /* Nose Cone */
-      .nose-cone {
-        position: absolute;
-        bottom: 0; left: 50%;
-        transform: translateX(-50%);
-        width: 120px; height: 100%;
-        background: linear-gradient(to right, #111, #222 40%, #222 60%, #111);
-        clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
-        box-shadow: 0 -10px 20px rgba(0,0,0,0.8);
-      }
-      .nose-cone::after { /* Highlight */
-        content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-        width: 40%; height: 100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
-      }
-      .nose-tip {
-        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-        width: 60%; height: 20px;
-        background: #222;
-        border-radius: 50% 50% 0 0;
-      }
-      .nose-stripe {
-        position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-        width: 10px; height: 80%;
-        background: var(--neon-accent);
-        box-shadow: 0 0 10px var(--neon-accent);
-      }
-      .team-logo-placeholder {
-        position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-        width: 40px; height: 40px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23fff" opacity="0.2"/></svg>') no-repeat center;
-      }
-
-      /* Front Wing */
-      .front-wing-left, .front-wing-right {
-        position: absolute; bottom: 20px;
-        width: 180px; height: 60px;
-        background: linear-gradient(to bottom, #1a1a1a, #000);
-        border-top: 2px solid #444;
-      }
-      .front-wing-left {
-        left: -100px;
-        transform: skewX(20deg) rotate(-5deg);
-        border-radius: 10px 0 0 10px;
-      }
-      .front-wing-right {
-        right: -100px;
-        transform: skewX(-20deg) rotate(5deg);
-        border-radius: 0 10px 10px 0;
-      }
-
-      /* Suspension Arms */
-      .suspension-left, .suspension-right {
-        position: absolute; bottom: 100px;
-        width: 150px; height: 15px;
-        background: #111;
-        border: 1px solid #333;
-      }
-      .suspension-left {
-        left: -80px;
-        transform: rotate(-20deg);
-        transform-origin: right center;
-      }
-      .suspension-right {
-        right: -80px;
-        transform: rotate(20deg);
-        transform-origin: left center;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="world-container">
-      <div class="sky"></div>
-      
-      <!-- Singapore Cityscape -->
-      <div class="cityscape">
-        <div class="skyline-far"></div>
-        <div class="mbs-complex">
-          <div class="mbs-tower t1"></div>
-          <div class="mbs-tower t2"></div>
-          <div class="mbs-tower t3"></div>
-          <div class="mbs-skypark"></div>
-        </div>
-        <div class="singapore-flyer">
-          <div class="flyer-rim"></div>
-          <div class="flyer-spokes"></div>
-        </div>
-        <div class="supertrees">
-          <div class="tree t1"></div>
-          <div class="tree t2"></div>
-          <div class="tree t3"></div>
-        </div>
-      </div>
-      <div class="track-surface">
-        <div class="track-lines"></div>
-        <div class="center-line"></div>
-      </div>
-
-      <!-- Side Barriers -->
-      <div class="barrier-left"></div>
-      <div class="barrier-right"></div>
-
-      <!-- Billboards (Real Singapore GP Sponsors) -->
-      <div class="billboard left-1 sponsor-sia"><span>SINGAPORE AIRLINES</span></div>
-      <div class="billboard right-1 sponsor-rolex"><span>ROLEX</span></div>
-      <div class="billboard left-2 sponsor-dhl"><span>DHL</span></div>
-      <div class="billboard right-2 sponsor-heineken"><span>Heineken</span></div>
-      <div class="billboard left-3 sponsor-aramco"><span>aramco</span></div>
-      <div class="billboard right-3 sponsor-pirelli"><span>PIRELLI</span></div>
-
-      <!-- Powerful Floodlights (Singapore Brightness) -->
-      <div class="floodlight-glow"></div>
-      <div class="overhead-lights">
-        <!-- Main Track Lights -->
-        <div class="light-beam lb-1"></div>
-        <div class="light-beam lb-2"></div>
-        <div class="light-beam lb-3"></div>
-        <div class="light-beam lb-4"></div>
-        <div class="light-beam lb-5"></div>
-        <div class="light-beam lb-6"></div>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         
-        <!-- Side Floodlights (Illuminating Barriers) -->
-        <div class="side-light sl-left-1"></div>
-        <div class="side-light sl-right-1"></div>
-        <div class="side-light sl-left-2"></div>
-        <div class="side-light sl-right-2"></div>
-      </div>
-      
-      <!-- F1 Car Nose (POV) -->
-      <div class="f1-car-nose">
-        <div class="nose-cone">
-          <div class="nose-tip"></div>
-          <div class="nose-stripe"></div>
-          <div class="team-logo-placeholder"></div>
-        </div>
-        <div class="front-wing-left"></div>
-        <div class="front-wing-right"></div>
-        <div class="suspension-left"></div>
-        <div class="suspension-right"></div>
-      </div>
-    </div>
+        body { 
+            width: 100vw; height: 100vh; background: #000; 
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
 
-    <div class="cockpit-visor"></div>
-    <div class="page-title">F1 REACTION TEST</div>
+        #game-container {
+            position: relative;
+            width: 100%; max-width: 177.78vh; aspect-ratio: 16 / 9;
+            background-image: url('./assets/background.jpg');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            cursor: pointer;
+        }
 
-    <div class="theme-toggle" id="themeToggle">
-      <span class="toggle-label">MODE</span>
-      <div class="toggle-switch"><div class="toggle-knob"></div></div>
-    </div>
+        .input-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 999; -webkit-tap-highlight-color: transparent;
+        }
 
-    <div class="game-ui">
-      <div class="info-panel">
-        <div id="status" class="status-message"></div>
-      </div>
+        /* 좌표, 원, 필터, 마스크 등 모든 시각 요소 제거됨 */
 
-      <div class="gantry">
-        <div class="light-pod">
-          <div class="light"></div>
-          <div class="light"></div>
-        </div>
-        <div class="light-pod">
-          <div class="light"></div>
-          <div class="light"></div>
-        </div>
-        <div class="light-pod">
-          <div class="light"></div>
-          <div class="light"></div>
-        </div>
-        <div class="light-pod">
-          <div class="light"></div>
-          <div class="light"></div>
-        </div>
-        <div class="light-pod">
-          <div class="light"></div>
-          <div class="light"></div>
-        </div>
-      </div>
+        /* --- 결과 텍스트 --- */
+        .result-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10vh;
+            font-weight: 900;
+            color: #00ff00;
+            text-shadow: 0 0 20px rgba(0,255,0,0.8);
+            pointer-events: none;
+            display: none; 
+            z-index: 20;
+        }
 
-      <button id="launchBtn" class="launch-btn">LAUNCH CLUTCH</button>
+        .result-text.visible { display: block; }
+        .result-text.penalty { color: #ff0000; text-shadow: 0 0 20px red; font-size: 8vh; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="input-layer" id="clickArea"></div>
+        <div id="resultText" class="result-text"></div>
     </div>
 
     <script>
-      const STATE = {
-        IDLE: "IDLE",
-        SEQUENCE: "SEQUENCE",
-        READY: "READY",
-        STARTED: "STARTED",
-        ENDED: "ENDED",
-      };
-      let currentState = STATE.IDLE;
-      let startTime = 0;
-      let timers = [];
+        const clickArea = document.getElementById('clickArea');
+        const resultEl = document.getElementById('resultText');
 
-      const launchBtn = document.getElementById("launchBtn");
-      const statusEl = document.getElementById("status");
-      const lightPods = document.querySelectorAll(".light-pod");
-      const themeToggle = document.getElementById("themeToggle");
+        let currentState = "IDLE"; 
+        let startTime = 0;
+        let timers = [];
 
-      // 입력 처리 (클릭/터치/스페이스바)
-      const handleInput = (e) => {
-        if (e.type === "touchstart") e.preventDefault();
-
-        if (currentState === STATE.IDLE || currentState === STATE.ENDED) {
-          startSequence();
-        } else if (
-          currentState === STATE.SEQUENCE ||
-          currentState === STATE.READY
-        ) {
-          triggerFalseStart();
-        } else if (currentState === STATE.STARTED) {
-          finishRace();
+        function handleInput(e) {
+            if(e.type === 'touchstart') e.preventDefault();
+            
+            switch (currentState) {
+                case "IDLE":
+                case "ENDED": 
+                    startSequence(); 
+                    break;
+                case "SEQUENCE":
+                case "READY": 
+                    triggerPenalty(); 
+                    break;
+                case "STARTED": 
+                    finishRace(); 
+                    break;
+            }
         }
-      };
 
-      launchBtn.addEventListener("mousedown", handleInput);
-      launchBtn.addEventListener("touchstart", handleInput);
-      document.addEventListener("keydown", (e) => {
-        if (e.code === "Space") handleInput(e);
-      });
+        clickArea.addEventListener("mousedown", handleInput);
+        clickArea.addEventListener("touchstart", handleInput, {passive: false});
+        document.addEventListener("keydown", (e) => { if (e.code === "Space") handleInput(e); });
 
-      themeToggle.addEventListener("click", () =>
-        document.body.classList.toggle("day-mode")
-      );
+        function startSequence() {
+            currentState = "SEQUENCE";
+            resultEl.classList.remove("visible"); // 텍스트 숨김
+            clearTimers();
 
-      // 게임 로직
-      function startSequence() {
-        currentState = STATE.SEQUENCE;
-        resetLights();
-        statusEl.textContent = "";
-        launchBtn.textContent = "HOLD...";
-        launchBtn.style.borderColor = "#fff";
-        launchBtn.style.color = "#fff";
-
-        clearTimers();
-
-        // 1초 간격으로 불 켜기
-        for (let i = 0; i < 5; i++) {
-          timers.push(
-            setTimeout(() => {
-              if (currentState !== STATE.SEQUENCE) return;
-              turnOnPod(i);
-              if (i === 4) {
-                currentState = STATE.READY;
-                // 5개 다 켜지면 0.2~3.0초 후 소등
-                const randomDelay = Math.random() * 2800 + 200;
-                timers.push(setTimeout(lightsOut, randomDelay));
-              }
-            }, (i + 1) * 1000)
-          );
+            // 시각적 카운트다운 없이 내부적으로만 시간 계산
+            // 5초 대기 후 랜덤 딜레이 시작
+            timers.push(setTimeout(() => {
+                currentState = "READY";
+                const delay = Math.random() * 2000 + 500; 
+                timers.push(setTimeout(lightsOut, delay));
+            }, 5000)); // 5초 (신호등 5개 켜지는 시간 시뮬레이션)
         }
-      }
 
-      function lightsOut() {
-        if (currentState !== STATE.READY) return;
-        setAllLights(false); // 소등
-        startTime = performance.now();
-        currentState = STATE.STARTED;
-        launchBtn.textContent = "GO! GO! GO!";
-        launchBtn.style.borderColor = "#00ff00";
-        launchBtn.style.color = "#00ff00";
-      }
+        function lightsOut() {
+            if (currentState !== "READY") return;
+            startTime = performance.now();
+            currentState = "STARTED";
+            
+            // 시각적 신호: 텍스트 표시 (GO!)
+            // 원하시면 여기에 화면 번쩍임 효과 등을 추가할 수 있습니다.
+            resultEl.textContent = "GO!";
+            resultEl.className = "result-text visible";
+        }
 
-      function finishRace() {
-        const reactionTime = performance.now() - startTime;
-        currentState = STATE.ENDED;
-        statusEl.textContent = reactionTime.toFixed(3) + " MS";
-        statusEl.className = "status-message success";
-        launchBtn.textContent = "RESTART";
-      }
+        function finishRace() {
+            const reactionTime = performance.now() - startTime;
+            currentState = "ENDED";
+            resultEl.textContent = reactionTime.toFixed(3) + " MS";
+            resultEl.className = "result-text visible";
+        }
 
-      function triggerFalseStart() {
-        clearTimers();
-        currentState = STATE.ENDED;
-        statusEl.textContent = "JUMP START";
-        statusEl.className = "status-message penalty";
-        launchBtn.textContent = "DISQUALIFIED";
-        launchBtn.style.borderColor = "#ff0000";
-        launchBtn.style.color = "#ff0000";
+        function triggerPenalty() {
+            clearTimers();
+            currentState = "ENDED";
+            resultEl.textContent = "JUMP START!";
+            resultEl.className = "result-text visible penalty";
+        }
 
-        // 깜빡임 효과
-        let count = 0;
-        const flash = setInterval(() => {
-          count++;
-          setAllLights(count % 2 === 0);
-          if (count >= 6) {
-            clearInterval(flash);
-            setAllLights(false);
-          }
-        }, 150);
-      }
-
-      // 유틸리티 함수
-      function turnOnPod(index) {
-        const lights = lightPods[index].querySelectorAll(".light");
-        lights.forEach((l) => l.classList.add("on"));
-      }
-
-      function setAllLights(isOn) {
-        document.querySelectorAll(".light").forEach((l) => {
-          if (isOn) l.classList.add("on");
-          else l.classList.remove("on");
-        });
-      }
-
-      function resetLights() {
-        setAllLights(false);
-      }
-      function clearTimers() {
-        timers.forEach((t) => clearTimeout(t));
-        timers = [];
-      }
+        function clearTimers() { timers.forEach(t => clearTimeout(t)); timers = []; }
     </script>
-  </body>
+</body>
 </html>
