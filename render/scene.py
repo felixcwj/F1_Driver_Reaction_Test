@@ -7,14 +7,11 @@ driver's eye of the car on grid slot P2, and renders it with Cycles.
 Run with the `bpy` Python module (Blender as a module):
     python render/scene.py --aspect landscape --width 2400 --samples 256 --out out/landscape.exr
 
-Four layer passes per camera, each written as one EXR per render pass (<out><Pass>.exr):
-  --pass bg     : Image + Mist — circuit, city, the car ahead (replaceable by a photo plate)
-  --pass gantry : Image (RGBA) — the start-light gantry with all lights dark
-  --pass fg     : Image (RGBA) — our cockpit: bodywork, halo, mirrors, wheel, gloves
-  --pass lamps  : Combined_col1..5 — camera-visible emission of each light column,
-                  rendered only in the light unit's region and never denoised
-Every layer is lit by, shadows and reflects the complete scene; only primary visibility differs.
-render/post.py tone-maps each layer and writes the web assets.
+Two passes per camera, each written as one EXR per render pass (<out><Pass>.exr):
+  --pass plate : Image (denoised, start lights dark) + Mist (depth for haze)
+  --pass lamps : Combined_col1..5 — camera-visible emission of each light column,
+                 rendered only in the light unit's region and never denoised
+render/post.py adds the columns onto the plate and crops the five light states.
 """
 
 from __future__ import annotations
@@ -387,68 +384,6 @@ def mat_windows(name, scale=(14, 30), lit=0.55, strength=3.0, warm=True, base=(0
     return m
 
 
-def mat_office(name, warm=False, lit=0.55, strength=1.0, bay=3.2, floor=3.8, group=7):
-    """Night facade: whole runs of a floor lit together (offices / hotel rooms), dark spandrels
-    between floors, glass picking up the city glow. Replaces per-window random noise, which
-    reads as a barcode at distance."""
-    m, nt, n, l, b = node_mat(name)
-    tc = n.new("ShaderNodeTexCoord")
-    mapping = n.new("ShaderNodeMapping")
-    mapping.inputs["Scale"].default_value = (1 / bay, 1 / bay, 1 / floor)
-    l.new(tc.outputs["Object"], mapping.inputs["Vector"])
-    brick = n.new("ShaderNodeTexBrick")
-    brick.offset = 0.0
-    brick.inputs["Mortar Size"].default_value = 0.16
-    brick.inputs["Mortar Smooth"].default_value = 0.2
-    brick.inputs["Brick Width"].default_value = 1.0
-    brick.inputs["Row Height"].default_value = 1.0
-    brick.inputs["Scale"].default_value = 1.0
-    brick.inputs["Color1"].default_value = (1, 1, 1, 1)
-    brick.inputs["Color2"].default_value = (0.8, 0.8, 0.8, 1)
-    brick.inputs["Mortar"].default_value = (0, 0, 0, 1)
-    l.new(mapping.outputs["Vector"], brick.inputs["Vector"])
-    # one random value per (run of `group` bays, floor)
-    grp = n.new("ShaderNodeVectorMath")
-    grp.operation = "MULTIPLY"
-    grp.inputs[1].default_value = (1 / group, 1 / group, 1.0)
-    l.new(mapping.outputs["Vector"], grp.inputs[0])
-    snap = n.new("ShaderNodeVectorMath")
-    snap.operation = "FLOOR"
-    l.new(grp.outputs["Vector"], snap.inputs[0])
-    wn = n.new("ShaderNodeTexWhiteNoise")
-    wn.noise_dimensions = "3D"
-    l.new(snap.outputs["Vector"], wn.inputs["Vector"])
-    on = n.new("ShaderNodeMath")
-    on.operation = "GREATER_THAN"
-    on.inputs[1].default_value = 1 - lit
-    l.new(wn.outputs["Value"], on.inputs[0])
-    level = n.new("ShaderNodeMapRange")  # brightness differs from run to run
-    level.inputs["To Min"].default_value = 0.35
-    level.inputs["To Max"].default_value = 1.0
-    sep = n.new("ShaderNodeSeparateColor")
-    l.new(wn.outputs["Color"], sep.inputs["Color"])
-    l.new(sep.outputs[1], level.inputs["Value"])
-    m1 = n.new("ShaderNodeMath")
-    m1.operation = "MULTIPLY"
-    l.new(on.outputs[0], m1.inputs[0])
-    l.new(level.outputs["Result"], m1.inputs[1])
-    m2 = n.new("ShaderNodeMath")
-    m2.operation = "MULTIPLY"
-    l.new(m1.outputs[0], m2.inputs[0])
-    l.new(brick.outputs["Fac"], m2.inputs[1])
-    m3 = n.new("ShaderNodeMath")
-    m3.operation = "MULTIPLY"
-    m3.inputs[1].default_value = strength
-    l.new(m2.outputs[0], m3.inputs[0])
-    col = (1.0, 0.78, 0.55) if warm else (0.82, 0.9, 1.0)
-    b.inputs["Emission Color"].default_value = (*col, 1)
-    l.new(m3.outputs[0], b.inputs["Emission Strength"])
-    b.inputs["Base Color"].default_value = (0.03, 0.035, 0.04, 1)
-    b.inputs["Metallic"].default_value = 0.6
-    b.inputs["Roughness"].default_value = 0.18
-    return m
-
-
 def mat_glazing(name, color, strength, mullion=(0.5, 0.5)):
     """Lit glazing behind a dark mullion grid, with soft brightness variation between bays."""
     m, nt, n, l, b = node_mat(name)
@@ -493,11 +428,11 @@ def mat_crowd():
     m, nt, n, l, b = node_mat("crowd")
     tc = n.new("ShaderNodeTexCoord")
     vor = n.new("ShaderNodeTexVoronoi")
-    vor.inputs["Scale"].default_value = 38.0
+    vor.inputs["Scale"].default_value = 16.0
     l.new(tc.outputs["Object"], vor.inputs["Vector"])
     hsv = n.new("ShaderNodeHueSaturation")
-    hsv.inputs["Saturation"].default_value = 0.3
-    hsv.inputs["Value"].default_value = 0.12
+    hsv.inputs["Saturation"].default_value = 0.4
+    hsv.inputs["Value"].default_value = 0.22
     l.new(vor.outputs["Color"], hsv.inputs["Color"])
     l.new(hsv.outputs["Color"], b.inputs["Base Color"])
     b.inputs["Roughness"].default_value = 0.85
@@ -884,8 +819,6 @@ def build_track(mats):
             length = 12.0
             mk = "board_a" if (i % 3) else "board_b"
             box(f"board{s}{i}", (x - s * 0.26, y + length / 2, WALL_H * 0.52), (0.02, length - 0.05, WALL_H * 0.82), mats[mk])
-            if mk == "board_a" and y < 260:
-                hoarding_text(f"txt{s}{i}", "MARINA BAY", (x - s * 0.275, y + length / 2, WALL_H * 0.36), s, mats["board_text"])
             y += length
             i += 1
         # debris fence on top: posts + mesh panel + cables
@@ -900,20 +833,6 @@ def build_track(mats):
             y += 4.0
         for zc in (WALL_H + 0.6, WALL_H + 1.7, WALL_H + 2.8):
             box(f"cable{s}{zc}", (x - s * 0.04, 180, zc), (0.015, 440, 0.015), mats["steel"])
-
-
-def hoarding_text(name, body, loc, side, mat):
-    cu = bpy.data.curves.new(name, "FONT")
-    cu.body = body
-    cu.size = 0.5
-    cu.align_x = "CENTER"
-    cu.extrude = 0.002
-    ob = bpy.data.objects.new(name, cu)
-    ob.location = loc
-    # stand the text up and turn it to face the track
-    ob.rotation_euler = (math.radians(90), 0, math.radians(90) if side < 0 else math.radians(-90))
-    cu.materials.append(mat)
-    link(ob)
 
 
 def floodlight(i, x, y, side, mats):
@@ -1017,87 +936,65 @@ def build_paddock(mats):
     mesh_obj("pitlane", [(face, -60, 0.005), (-TRACK_HALF - 0.5, -60, 0.005), (-TRACK_HALF - 0.5, 420, 0.005), (face, 420, 0.005)],
              [(0, 1, 2, 3)], mats["asphalt"])
     # grandstand on the right: stepped terraces with spectators, roof with light strips
-    # (it ends 140 m up the road, opening the view to the skyline beyond)
     for r in range(14):
-        box(f"stand{r}", (TRACK_HALF + 12 + r * 0.9, 75, 1.8 + r * 0.5), (0.9, 130, 0.5), mats["crowd"])
-    box("stand_roof", (TRACK_HALF + 19, 75, 12.5), (16, 132, 0.4), mats["steel_dark"])
+        box(f"stand{r}", (TRACK_HALF + 12 + r * 0.9, 120, 1.8 + r * 0.5), (0.9, 220, 0.5), mats["crowd"])
+    box("stand_roof", (TRACK_HALF + 19, 120, 12.5), (16, 222, 0.4), mats["steel_dark"])
     for k in range(4):
-        for j in range(14):
-            box(f"stand_lamp{k}_{j}", (TRACK_HALF + 13 + k * 3.5, 14 + j * 9.0, 12.25), (0.35, 0.35, 0.04), mats["stand_lamp"])
-
-
-def tower(name, x, y, w, d, h, mat, crown=None):
-    box(name, (x, y, h / 2), (w, d, h), mat)
-    if crown is not None:
-        box(name + "_crown", (x, y, h + 0.6), (w * 1.002, d * 1.002, 1.2), crown)
+        for j in range(24):
+            box(f"stand_lamp{k}_{j}", (TRACK_HALF + 13 + k * 3.5, 10 + j * 9.0, 12.25), (0.35, 0.35, 0.04), mats["stand_lamp"])
 
 
 def build_city(mats):
-    """Downtown skyline beyond the straight: office towers with floor-by-floor lighting, an
-    integrated-resort silhouette (three towers under a sky deck) and an observation wheel."""
-    offices = ["office_cool", "office_cool", "office_warm", "office_dim"]
+    # distant skyline beyond the end of the straight and to both sides
     towers = []
-    for i in range(80):
+    for i in range(70):
         side = rng.choice([-1, 1])
-        x = side * rng.uniform(45, 300)
-        y = rng.uniform(280, 1100)
-        if abs(x) < 70 and y < 420:
+        x = side * rng.uniform(40, 260)
+        y = rng.uniform(260, 820)
+        if abs(x) < 60 and y < 380:
             continue
-        if 40 < x < 330 and y > 750:  # keep the resort's silhouette clear
-            continue
-        h = rng.uniform(35, 110) * (1.0 + (y - 280) / 900)
-        if rng.random() < 0.2:
-            h *= 1.7
-        towers.append((x, y, rng.uniform(22, 48), rng.uniform(22, 48), h))
-    # the CBD cluster straight ahead / left, tallest towers furthest away
-    for i in range(22):
-        x = rng.uniform(-230, 30)
-        y = rng.uniform(700, 1500)
-        towers.append((x, y, rng.uniform(30, 55), rng.uniform(30, 55), rng.uniform(120, 280)))
+        w = rng.uniform(18, 46)
+        d = rng.uniform(18, 46)
+        h = rng.uniform(30, 120) * (1.0 + (y - 260) / 700)
+        if rng.random() < 0.18:
+            h *= 1.8
+        towers.append((x, y, w, d, h))
+    # a cluster ahead-left and ahead-right (where the straight leads into the city)
+    for i in range(18):
+        x = rng.uniform(-160, 160)
+        y = rng.uniform(450, 900)
+        towers.append((x, y, rng.uniform(25, 50), rng.uniform(25, 50), rng.uniform(80, 240)))
     for i, (x, y, w, d, h) in enumerate(towers):
-        mk = rng.choice(offices)
-        crown = mats["crown"] if rng.random() < 0.25 else None
-        tower(f"tower{i}", x, y, w, d, h, mats[mk], crown)
-        if h > 140 or rng.random() < 0.3:
-            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.8, location=(x, y, h + 1.5))
-            bpy.context.active_object.data.materials.append(mats["warn_red"])
-
-    # integrated resort: three slender hotel towers carrying a long sky deck with a cantilever
-    rx, ry, H = 175.0, 1080.0, 195.0
-    for k in range(3):
-        tx = rx - 100 + k * 100
-        for leg, off in ((0, -11.0), (1, 11.0)):
-            box(f"ir_tower{k}{leg}", (tx, ry + off, H / 2), (32, 14, H), mats["hotel"])
-        box(f"ir_core{k}", (tx, ry, H / 2), (20, 10, H - 4), mats["hotel"])
-    box("ir_deck", (rx + 20, ry, H + 4), (340, 38, 7), mats["steel_dark"], bevel=1.0)
-    box("ir_deck_glow", (rx + 20, ry - 19.2, H + 1.2), (338, 0.3, 1.2), mats["deck_light"])
-    # waterfront / podium glow below
-    box("ir_podium", (rx, ry - 40, 9), (330, 40, 18), mats["office_warm"])
-
-    # observation wheel, right of the resort, partly behind the grandstand roof line
-    cx, cy, r = 360.0, 1150.0, 75.0
-    zc = r + 15
-    yaw = math.radians(-20)
-    bpy.ops.mesh.primitive_torus_add(major_radius=r, minor_radius=0.9, location=(cx, cy, zc),
-                                     rotation=(math.radians(90), 0, yaw), major_segments=128)
-    bpy.context.active_object.data.materials.append(mats["wheel_lights"])
-    bpy.ops.mesh.primitive_torus_add(major_radius=r - 3, minor_radius=0.35, location=(cx, cy, zc),
-                                     rotation=(math.radians(90), 0, yaw), major_segments=128)
+        mk = rng.choice(["win_a", "win_b", "win_c"])
+        box(f"tower{i}", (x, y, h / 2), (w, d, h), mats[mk])
+        if rng.random() < 0.35:
+            # aircraft warning light
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.6, location=(x, y, h + 0.6))
+            ob = bpy.context.active_object
+            ob.data.materials.append(mats["warn_red"])
+    # observation wheel (Singapore-style), far right
+    cx, cy, r = 150.0, 520.0, 75.0
+    bpy.ops.mesh.primitive_torus_add(major_radius=r, minor_radius=0.9, location=(cx, cy, r + 15),
+                                     rotation=(math.radians(90), 0, math.radians(-35)), major_segments=128)
+    ob = bpy.context.active_object
+    ob.data.materials.append(mats["wheel_lights"])
+    bpy.ops.mesh.primitive_torus_add(major_radius=r - 3, minor_radius=0.35, location=(cx, cy, r + 15),
+                                     rotation=(math.radians(90), 0, math.radians(-35)), major_segments=128)
     bpy.context.active_object.data.materials.append(mats["steel_dark"])
-    d = Vector((math.cos(yaw), math.sin(yaw), 0))
     for k in range(28):
         a = 2 * math.pi * k / 28
-        p1 = Vector((cx, cy, zc)) + d * (math.cos(a) * r) + Vector((0, 0, math.sin(a) * r))
-        tube(f"spoke{k}", [(cx, cy, zc), tuple(p1)], 0.2, mats["steel_dark"])
+        ex = math.cos(a) * r
+        ez = math.sin(a) * r
+        d = Vector((math.cos(math.radians(-35)), math.sin(math.radians(-35)), 0))
+        p1 = Vector((cx, cy, r + 15)) + d * ex + Vector((0, 0, ez))
+        tube(f"spoke{k}", [(cx, cy, r + 15), tuple(p1)], 0.2, mats["steel_dark"])
         bpy.ops.mesh.primitive_cube_add(size=3.2, location=tuple(p1))
         bpy.context.active_object.data.materials.append(mats["capsule"])
-    for s_ in (-1, 1):
-        tube(f"wheel_leg{s_}", [(cx + s_ * 18 * d.x, cy + s_ * 18 * d.y, 0), (cx, cy, zc)], 1.2, mats["steel_dark"])
+    for s in (-1, 1):
+        tube(f"wheel_leg{s}", [(cx + s * 18, cy, 0), (cx, cy, r + 15)], 1.2, mats["steel_dark"])
 
 
 def build_world():
-    """Humid tropical night: brown-orange light pollution near the horizon, low cloud lit
-    from below by the city, deep blue-black overhead."""
     w = bpy.data.worlds.new("night")
     bpy.context.scene.world = w
     try:
@@ -1105,52 +1002,24 @@ def build_world():
     except Exception:
         pass
     nt = w.node_tree
-    N, L = nt.nodes, nt.links
-    bg = N["Background"]
-    tc = N.new("ShaderNodeTexCoord")
-    sep = N.new("ShaderNodeSeparateXYZ")
-    L.new(tc.outputs["Generated"], sep.inputs[0])
-    ramp = N.new("ShaderNodeValToRGB")
+    bg = nt.nodes["Background"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Generated"], sep.inputs[0])
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    # glow of the city near the horizon, deep blue-black above
     e = ramp.color_ramp.elements
     e[0].position = 0.0
-    e[0].color = (0.13, 0.075, 0.045, 1)
-    e[1].position = 0.35
-    e[1].color = (0.006, 0.008, 0.016, 1)
-    e.new(0.06).color = (0.07, 0.045, 0.035, 1)
-    e.new(0.16).color = (0.022, 0.018, 0.022, 1)
-    L.new(sep.outputs["Z"], ramp.inputs["Fac"])
-    # clouds: stretched noise, brighter towards the horizon (lit from below)
-    mp = N.new("ShaderNodeMapping")
-    mp.inputs["Scale"].default_value = (1.0, 1.0, 4.0)
-    L.new(tc.outputs["Generated"], mp.inputs["Vector"])
-    noise = N.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 2.2
-    noise.inputs["Detail"].default_value = 8.0
-    noise.inputs["Roughness"].default_value = 0.6
-    L.new(mp.outputs["Vector"], noise.inputs["Vector"])
-    cl = N.new("ShaderNodeMapRange")
-    cl.inputs["From Min"].default_value = 0.45
-    cl.inputs["From Max"].default_value = 0.75
-    L.new(noise.outputs["Fac"], cl.inputs["Value"])
-    fade = N.new("ShaderNodeMapRange")  # clouds visible low in the sky only
-    fade.inputs["From Min"].default_value = 0.4
-    fade.inputs["From Max"].default_value = 0.03
-    L.new(sep.outputs["Z"], fade.inputs["Value"])
-    amt = N.new("ShaderNodeMath")
-    amt.operation = "MULTIPLY"
-    L.new(cl.outputs["Result"], amt.inputs[0])
-    L.new(fade.outputs["Result"], amt.inputs[1])
-    mix = N.new("ShaderNodeMix")
-    mix.data_type = "RGBA"
-    mix.blend_type = "ADD"
-    L.new(amt.outputs[0], mix.inputs["Factor"])
-    L.new(ramp.outputs["Color"], mix.inputs["A"])
-    mix.inputs["B"].default_value = (0.05, 0.032, 0.024, 1)
-    L.new(mix.outputs["Result"], bg.inputs["Color"])
+    e[0].color = (0.09, 0.06, 0.045, 1)
+    e[1].position = 0.22
+    e[1].color = (0.008, 0.011, 0.022, 1)
+    e.new(0.05).color = (0.05, 0.04, 0.045, 1)
+    nt.links.new(sep.outputs["Z"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], bg.inputs["Color"])
     bg.inputs["Strength"].default_value = 1.0
-    w.mist_settings.start = 10.0
-    w.mist_settings.depth = 1500.0
-    w.mist_settings.falloff = "LINEAR"
+    w.mist_settings.start = 6.0
+    w.mist_settings.depth = 600.0
+    w.mist_settings.falloff = "QUADRATIC"
     w.lightgroup = "env"
 
 
@@ -1184,7 +1053,7 @@ def materials(tex_dir):
     M["ground"] = principled("ground", (0.02, 0.02, 0.02), 0.9)
     M["concrete"] = principled("concrete", (0.2, 0.2, 0.195), 0.85)
     M["board_a"] = principled("board_a", (0.02, 0.05, 0.16), 0.35, coat=0.3)
-    M["board_b"] = principled("board_b", (0.32, 0.33, 0.35), 0.4, coat=0.3)
+    M["board_b"] = principled("board_b", (0.55, 0.55, 0.56), 0.4, coat=0.3)
     M["fence"] = mat_fence()
     M["steel"] = principled("steel", (0.45, 0.46, 0.47), 0.35, metal=1.0)
     M["steel_dark"] = principled("steel_dark", (0.08, 0.085, 0.09), 0.45, metal=0.8)
@@ -1198,13 +1067,9 @@ def materials(tex_dir):
     M["pit_wall"] = principled("pit_wall", (0.05, 0.055, 0.06), 0.4, metal=0.3)
     M["garage"] = mat_glazing("garage", (1.0, 0.98, 0.95), 3.5, mullion=(0.5, 0.5))
     M["glazing"] = mat_glazing("glazing", (1.0, 0.82, 0.6), 1.3, mullion=(0.6, 0.3))
-    M["office_cool"] = mat_office("office_cool", warm=False, lit=0.35, strength=0.45)
-    M["office_warm"] = mat_office("office_warm", warm=True, lit=0.45, strength=0.4, bay=2.6, group=4)
-    M["office_dim"] = mat_office("office_dim", warm=False, lit=0.15, strength=0.3)
-    M["hotel"] = mat_office("hotel", warm=True, lit=0.75, strength=1.1, bay=2.0, floor=3.2, group=3)
-    M["crown"] = mat_emit("crown", (0.85, 0.92, 1.0), 2.0)
-    M["deck_light"] = mat_emit("deck_light", (1.0, 0.85, 0.65), 8.0)
-    M["board_text"] = principled("board_text", (0.8, 0.8, 0.8), 0.4)
+    M["win_a"] = mat_windows("win_a", scale=(0.33, 0.28), lit=0.35, strength=1.6)
+    M["win_b"] = mat_windows("win_b", scale=(0.25, 0.30), lit=0.25, strength=2.0, warm=False)
+    M["win_c"] = mat_windows("win_c", scale=(0.5, 0.32), lit=0.45, strength=1.2)
     M["crowd"] = mat_crowd()
     M["warn_red"] = mat_emit("warn_red", (1.0, 0.05, 0.02), 60.0)
     M["wheel_lights"] = mat_emit("wheel_lights", (0.85, 0.9, 1.0), 30.0)
@@ -1271,57 +1136,6 @@ def setup_camera(aspect):
     return cam
 
 
-def created(fn):
-    """Run a builder and return the set of objects it added."""
-    before = set(bpy.data.objects)
-    fn()
-    return set(bpy.data.objects) - before
-
-
-def set_border(sc, objs, margin):
-    """Render only the screen region covered by `objs` (full-size output, the rest left empty)."""
-    from bpy_extras.object_utils import world_to_camera_view
-    bpy.context.view_layer.update()
-    pts = [world_to_camera_view(sc, sc.camera, ob.matrix_world @ Vector(c)) for ob in objs for c in ob.bound_box]
-    pts = [p for p in pts if p.z > 0]
-    sc.render.use_border = True
-    sc.render.use_crop_to_border = False
-    sc.render.border_min_x = max(min(p.x for p in pts) - margin, 0)
-    sc.render.border_max_x = min(max(p.x for p in pts) + margin, 1)
-    sc.render.border_min_y = max(min(p.y for p in pts) - margin, 0)
-    sc.render.border_max_y = min(max(p.y for p in pts) + margin, 1)
-
-
-def write_camera_info(sc, path):
-    """Where the straight's vanishing point and the horizon fall in the frame (0-1, top-left
-    origin) plus the field of view — what a photo plate must match to replace the background."""
-    import json
-    from bpy_extras.object_utils import world_to_camera_view
-    bpy.context.view_layer.update()
-    cam = sc.camera
-    vp = world_to_camera_view(sc, cam, Vector((OUR_X, 1e6, EYE_Z)))
-    left = world_to_camera_view(sc, cam, Vector((OUR_X - 1e6, 1e6, EYE_Z)))
-    d = cam.data
-    w, h = sc.render.resolution_x, sc.render.resolution_y
-    if d.sensor_fit == "VERTICAL":
-        vfov = 2 * math.atan(d.sensor_height / 2 / d.lens)
-        hfov = 2 * math.atan(math.tan(vfov / 2) * w / h)
-    else:
-        hfov = 2 * math.atan(d.sensor_width / 2 / d.lens)
-        vfov = 2 * math.atan(math.tan(hfov / 2) * h / w)
-    info = {
-        "vanishingPoint": [round(vp.x, 4), round(1 - vp.y, 4)],
-        "horizonY": round(1 - vp.y, 4),
-        "horizonTiltDeg": round(math.degrees(math.atan2(vp.y - left.y, vp.x - left.x)) if left.z > 0 else 0.0, 3),
-        "hfovDeg": round(math.degrees(hfov), 2),
-        "vfovDeg": round(math.degrees(vfov), 2),
-        "eyeHeightM": EYE_Z,
-        "cameraPitchDeg": round(math.degrees(cam.rotation_euler.x) - 90, 2),
-    }
-    with open(path, "w") as f:
-        json.dump(info, f, indent=2)
-
-
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
     ap = argparse.ArgumentParser()
@@ -1331,11 +1145,9 @@ def main():
     ap.add_argument("--out", default="out/test.exr")
     ap.add_argument("--tex", default="out")
     ap.add_argument("--blend", default="")
-    ap.add_argument("--pass", dest="mode", default="bg", choices=["bg", "gantry", "fg", "lamps"],
-                    help="bg: circuit, city and the car ahead (denoised, + mist); "
-                         "gantry: start-light gantry with the lights dark, transparent background; "
-                         "fg: our cockpit (car, halo, wheel), transparent background; "
-                         "lamps: emission of each light column in the light unit region, no denoising")
+    ap.add_argument("--pass", dest="mode", default="plate", choices=["plate", "lamps"],
+                    help="plate: full denoised frame with the start lights dark; "
+                         "lamps: only the light unit region, emission per column, no denoising")
     a = ap.parse_args(argv)
 
     reset()
@@ -1375,12 +1187,11 @@ def main():
     build_world()
     build_track(mats)
     build_lighting(mats)
-    gantry_objs = created(lambda: build_gantry(mats))
+    build_gantry(mats)
     build_paddock(mats)
     build_city(mats)
-    fg_objs = created(lambda: (
-        build_car("our_", OUR_X, 0.0, Livery(mats["our_paint"], mats["carbon"], mats["our_halo"]), mats, our_car=True),
-        build_cockpit(OUR_X, 0.0, mats)))
+    build_car("our_", OUR_X, 0.0, Livery(mats["our_paint"], mats["carbon"], mats["our_halo"]), mats, our_car=True)
+    build_cockpit(OUR_X, 0.0, mats)
     build_car("p1_", P1_X, P1_Y, Livery(mats["p1_paint"], mats["carbon"], mats["p1_halo"]), mats, our_car=False)
     setup_camera(a.aspect)
     fill = bpy.data.lights.new("cockpit_fill", "AREA")
@@ -1393,31 +1204,29 @@ def main():
     fo_.rotation_euler = (math.radians(38), 0, 0)
     link(fo_)
 
-    # Each layer sees the whole scene in shadows and reflections; only what the camera sees
-    # directly differs. Lamps are always rendered on their own so the denoiser can't smear them.
-    if a.mode != "lamps":
+    if a.mode == "plate":
+        # Lamps are rendered separately so the denoiser can't smear their emission into the plate.
         for ob in LAMPS:
             ob.hide_render = True
-    if a.mode == "bg":
-        for ob in fg_objs | gantry_objs:
-            ob.visible_camera = False
         passes = ["Image", "Mist"]
-        write_camera_info(sc, a.out + "-camera.json")
-    elif a.mode in ("gantry", "fg"):
-        keep = gantry_objs if a.mode == "gantry" else fg_objs
-        for ob in bpy.data.objects:
-            if ob.type in {"MESH", "CURVE", "FONT"} and ob not in keep:
-                ob.visible_camera = False
-        sc.render.film_transparent = True
-        if a.mode == "gantry":
-            set_border(sc, [ob for ob in gantry_objs if ob.type in {"MESH", "CURVE"}], 0.01)
-        passes = ["Image"]
     else:
         # Camera-only emitters: the column passes are pure primary-ray emission (anti-aliased only).
         sc.cycles.use_denoising = False
         sc.cycles.use_adaptive_sampling = False
         sc.cycles.samples = 64
-        set_border(sc, LAMPS, 0.03)
+        from bpy_extras.object_utils import world_to_camera_view
+        bpy.context.view_layer.update()
+        pts = []
+        for ob in LAMPS:
+            for c in ob.bound_box:
+                pts.append(world_to_camera_view(sc, sc.camera, ob.matrix_world @ Vector(c)))
+        mx = 0.03
+        sc.render.use_border = True
+        sc.render.use_crop_to_border = False
+        sc.render.border_min_x = max(min(p.x for p in pts) - mx, 0)
+        sc.render.border_max_x = min(max(p.x for p in pts) + mx, 1)
+        sc.render.border_min_y = max(min(p.y for p in pts) - mx, 0)
+        sc.render.border_max_y = min(max(p.y for p in pts) + mx, 1)
         passes = [f"Combined_col{k}" for k in range(1, 6)]
 
     # Blender 5's still-image writer drops extra passes; route them through a File Output node.

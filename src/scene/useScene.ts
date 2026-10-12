@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { VARIANTS, pickSize, pickVariant, type SceneVariant, type VariantName } from './assets'
+import { VARIANTS, pickPlate, pickVariant, type SceneVariant, type VariantName } from './assets'
 
 function viewport() {
   const vv = window.visualViewport
@@ -29,8 +29,7 @@ export function useVariantName(): VariantName {
 
 export interface LoadedScene {
   variant: SceneVariant
-  backgroundUrl: string
-  foregroundUrl: string
+  plateUrl: string
 }
 
 const decoded = new Map<string, Promise<void>>()
@@ -57,7 +56,7 @@ function decode(src: string): Promise<void> {
 }
 
 /**
- * Preloads and decodes every image the start sequence needs (all layers + five light states)
+ * Preloads and decodes every image the start sequence needs (plate + five light states)
  * before the scene is reported as ready, so no light can ever wait on the network or decoder.
  */
 export function useSceneLoader(name: VariantName) {
@@ -71,10 +70,8 @@ export function useSceneLoader(name: VariantName) {
     let cancelled = false
     const variant = VARIANTS[name]
     const { w, h } = viewport()
-    const dpr = window.devicePixelRatio || 1
-    const backgroundUrl = pickSize(variant, variant.background, w, h, dpr)
-    const foregroundUrl = pickSize(variant, variant.foreground, w, h, dpr)
-    const all = [backgroundUrl, variant.gantry.url, ...variant.lights.urls, foregroundUrl]
+    const plateUrl = pickPlate(variant, w, h, window.devicePixelRatio || 1)
+    const all = [plateUrl, ...variant.lights.urls]
     let done = 0
     Promise.all(
       all.map((src) =>
@@ -85,7 +82,7 @@ export function useSceneLoader(name: VariantName) {
       ),
     )
       .then(() => {
-        if (!cancelled) setState({ scene: { variant, backgroundUrl, foregroundUrl }, progress: 1, error: null })
+        if (!cancelled) setState({ scene: { variant, plateUrl }, progress: 1, error: null })
       })
       .catch((e: unknown) => {
         if (!cancelled) setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) }))

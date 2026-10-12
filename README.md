@@ -50,11 +50,6 @@ npm run preview    # serve dist/ locally
   as a `click`. Hidden tab / `pagehide` / a frame stall over 250 ms / a camera switch on rotation all cancel
   the attempt and return to the intro. Input is ignored until every image is decoded.
 
-**Camera vibration.** The engine's `VIBRATION_PX` table maps each phase to a peak camera drift: 0 in `INTRO`,
-`ARMED`, `REACTION_WINDOW`, `RESULT` and `FALSE_START`; 0.05 px (sub-pixel, smooth 1.3 s cycle) only in
-`COUNTDOWN` and `WAITING_FOR_LIGHTS_OUT`, i.e. while red lights are showing. It switches off in the same frame the
-lights go out, and never runs under `prefers-reduced-motion`.
-
 Recorded per attempt (`engine.timeline`): `sequenceStartTime`, `lightSchedule`, `lightCommitTimes`,
 `fifthLightTime`, `holdMs`, `lightsOutDeadline`, `lightsOutCommitTime`, `lightsOutTime`, `inputTime`, `reactionRaw`.
 Open the site with `?debug` to expose the engine as `window.__lightsOut` for inspection.
@@ -70,64 +65,38 @@ team assets or third-party images are included.
 
 - `render/scene.py` builds the whole scene procedurally with Blender 5.2 (the `bpy` Python module) — our car's
   cockpit, halo, steering wheel and gloves, the P1 car ahead (offset to the left, 8 m up the staggered grid), the
-  start gantry, floodlight poles, walls with lettered hoardings, debris fences, pit building, grandstand, and a
-  downtown skyline (office towers lit floor by floor, a three-tower resort under a sky deck, an observation wheel)
-  under a humid, light-polluted night sky — and renders it with Cycles (physically based path tracing,
-  OpenImageDenoise).
+  start gantry, floodlight poles, walls, debris fences, pit building, grandstand and a distant city skyline with an
+  observation wheel — and renders it with Cycles (physically based path tracing, OpenImageDenoise).
 - Two cameras from the same eye point: 16:9 landscape and 9:19.5 portrait, so phones get a real framing instead
   of a stretched crop.
-- The frame is rendered as **layers**, each lit by and reflecting the complete scene; only what the camera sees
-  directly differs:
-
-  | layer | file | blend | contents |
-  | --- | --- | --- | --- |
-  | background | `<variant>-background-<w>.webp` | opaque | circuit, city, sky, car ahead — **replaceable** |
-  | gantry | `<variant>-gantry.webp` | normal (alpha) | start-light gantry with all lights dark |
-  | lights 1–5 | `<variant>-lights-<k>.webp` | screen | the first *k* lit columns plus their glow |
-  | foreground | `<variant>-foreground-<w>.webp` | normal (alpha) | our cockpit, halo, mirrors, wheel |
-
-  `render/post.py` gives every layer the same lens distortion, tone curve and vignette (haze and halation on the
-  background), so they register exactly. Light emission is rendered separately and never denoised.
+- Two passes per camera: the *plate* (start lights dark, denoised) and a *lamps* pass containing only each light
+  column's camera-visible emission, rendered just for the gantry region without denoising.
+  `render/post.py` composites them (haze from the mist pass, bloom, a filmic tone curve, mild lens distortion,
+  vignette and grain) and writes the plate plus five cumulative light-state crops. Every light state is therefore
+  an exact render of the same scene, not a drawn overlay.
 - Cars and liveries are fictional. There are no team, sponsor, tyre-brand or FIA marks. Fonts: Titillium Web
   (SIL Open Font License, via `@fontsource/titillium-web`).
 
 **Honest assessment.** The renders are physically lit CG built from procedural geometry, not photographs. They
 read as a night-time onboard view, but close up the models are simpler than a real car (the gloves, mirrors and the
-P1 car in particular) and a trained eye will see CG. The background layer is the part a photograph improves most —
-see below.
-
-### Replacing the background with a photo
-
-Drop a photo you have the right to use into `src/assets/scene/override/` and rebuild:
-
-```
-src/assets/scene/override/landscape-background.jpg   (16:9, e.g. 2400×1350)
-src/assets/scene/override/portrait-background.jpg    (9:19.5, e.g. 1170×2535)
-```
-
-(`.webp`, `.jpg`, `.jpeg`, `.png` or `.avif`.) It is used in place of the rendered background for that camera;
-the gantry, light states and cockpit are drawn on top unchanged. For the cockpit to sit naturally, the photo
-should be taken from (or cropped to) the same viewpoint — `camera` in `src/scene/scenes.json` gives the field
-of view, camera pitch, eye height and where the straight's vanishing point / horizon fall in the frame. A
-street-level night shot down a straight, at roughly 0.9 m height, matches best. Record the photo's source and
-licence in this README when you add one.
+P1 car in particular) and a trained eye will see CG. Sourcing licensed real onboard photography, or replacing the
+procedural models with a detailed licensed car model, is the obvious next step — see the asset pipeline below.
 
 ### Re-rendering the assets
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install bpy==5.2.2 OpenEXR pillow numpy
 OUT=/tmp/lo
-for pass in bg fg gantry lamps; do
-  suf=$([ $pass = bg ] || echo "-$pass")
-  .venv/bin/python render/scene.py --pass $pass --aspect landscape --width 2400 --samples 96 --out $OUT/L$suf --tex $OUT
-  .venv/bin/python render/scene.py --pass $pass --aspect portrait  --width 1170 --samples 96 --out $OUT/P$suf --tex $OUT
-done
+.venv/bin/python render/scene.py --aspect landscape --width 2400 --samples 96 --out $OUT/L --tex $OUT
+.venv/bin/python render/scene.py --aspect landscape --width 2400 --pass lamps --out $OUT/L-lamps --tex $OUT
+.venv/bin/python render/scene.py --aspect portrait --width 1170 --samples 96 --out $OUT/P --tex $OUT
+.venv/bin/python render/scene.py --aspect portrait --width 1170 --pass lamps --out $OUT/P-lamps --tex $OUT
 .venv/bin/python render/post.py export $OUT/L landscape src/assets/scene src/scene/scenes.json --exposure=0.55 --focus=0.5,0.42 --widths=0,1600
 .venv/bin/python render/post.py export $OUT/P portrait  src/assets/scene src/scene/scenes.json --exposure=0.55 --focus=0.5,0.55 --widths=0,780
 ```
 
-(≈ 1.5 hours on a 4-core CPU.) `src/scene/scenes.json` records each layer's size and position, the camera
-parameters, and the focus point kept on screen when cropping to the viewport.
+(≈ 1 hour on a 4-core CPU.) `src/scene/scenes.json` records each plate's size, the focus point kept on screen
+when cropping to the viewport, and where the light crops sit.
 
 ## Project layout
 

@@ -29,34 +29,22 @@ body {
   height: 100dvh;
 }
 
-/*
- * Engine idle on the grid: a slow, smooth, sub-pixel drift of the whole camera.
- * Off by default; Stage switches it on (data-vib="on") only while red lights are showing.
- * Amplitude comes from VIBRATION_PX in the engine via --vib.
- */
-.vibration {
-  --vib: 0px;
-}
-.vibration[data-vib='on'] {
-  animation: engine-idle 1.3s ease-in-out infinite;
+/* Grid idle: a very small, irregular camera tremor from the running engine. */
+.engine-idle {
+  animation: idle 0.42s steps(1, end) infinite;
   will-change: transform;
 }
-@keyframes engine-idle {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  25% { transform: translate3d(calc(var(--vib) * 0.6), calc(var(--vib) * -1), 0); }
-  50% { transform: translate3d(calc(var(--vib) * -0.4), calc(var(--vib) * 0.3), 0); }
-  75% { transform: translate3d(calc(var(--vib) * 0.3), calc(var(--vib) * 0.8), 0); }
+@keyframes idle {
+  0% { transform: translate3d(0, 0, 0); }
+  17% { transform: translate3d(0.35px, -0.3px, 0); }
+  33% { transform: translate3d(-0.25px, 0.25px, 0); }
+  50% { transform: translate3d(0.2px, 0.35px, 0); }
+  67% { transform: translate3d(-0.35px, -0.2px, 0); }
+  83% { transform: translate3d(0.15px, 0.15px, 0); }
 }
 
-.layer {
-  position: absolute;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* The light states switch instantly, like LEDs; they add light on top of the gantry. */
+/* The light states switch instantly, like LEDs; they live on their own layer. */
 .start-light {
-  mix-blend-mode: screen;
   will-change: opacity;
   transition: none;
 }
@@ -122,7 +110,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vibration[data-vib='on'],
+  .engine-idle,
   .prompt,
   .panel-in,
   .egg {

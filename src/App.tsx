@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { StartEngine, VIBRATION_PX, type Snapshot } from './game/engine'
+import { StartEngine, type Snapshot } from './game/engine'
 import { attachInput } from './game/input'
 import { Stage, type StageHandle } from './scene/Stage'
 import { useSceneLoader, useVariantName } from './scene/useScene'
@@ -24,7 +24,6 @@ export default function App() {
   useEffect(() => {
     const engine = new StartEngine({
       setLights: (n) => stageRef.current?.setLights(n),
-      onPhase: (p) => stageRef.current?.setVibration(VIBRATION_PX[p]),
       onChange: setSnap,
     })
     engineRef.current = engine

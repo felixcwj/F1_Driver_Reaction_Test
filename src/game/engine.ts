@@ -52,8 +52,6 @@ export interface Timeline {
 export interface EngineDeps {
   setLights: (count: number) => void
   onChange: (s: Snapshot) => void
-  /** Every internal phase change, synchronously (no React). Used for frame-exact visuals. */
-  onPhase?: (phase: Phase) => void
   raf?: (cb: FrameRequestCallback) => number
   caf?: (id: number) => void
   random?: () => number
@@ -72,20 +70,6 @@ export const RESULT_LOCK_MS = 700
 export const STALL_ABORT_MS = 250
 
 export const EASTER_EGG_THRESHOLD_MS = 100
-
-/**
- * Camera vibration per phase, in CSS px of peak amplitude. Only while red lights are
- * showing (countdown + hold) does the idling engine move the camera, and only sub-pixel.
- */
-export const VIBRATION_PX: Readonly<Record<Phase, number>> = {
-  INTRO: 0,
-  ARMED: 0,
-  COUNTDOWN: 0.05,
-  WAITING_FOR_LIGHTS_OUT: 0.05,
-  REACTION_WINDOW: 0,
-  RESULT: 0,
-  FALSE_START: 0,
-}
 
 export function isEasterEgg(reactionMs: number | null): boolean {
   return reactionMs !== null && reactionMs < EASTER_EGG_THRESHOLD_MS
@@ -205,7 +189,7 @@ export class StartEngine {
     this.setLit(0)
     if (running) {
       this.aborted = true
-      this.enter('INTRO')
+      this.phase = 'INTRO'
       this.emit()
     }
   }
@@ -241,12 +225,6 @@ export class StartEngine {
     this.deps.onChange(s)
   }
 
-  private enter(phase: Phase): void {
-    if (phase === this.phase) return
-    this.phase = phase
-    this.deps.onPhase?.(phase)
-  }
-
   private setLit(n: number): void {
     if (n === this.litCount) return
     this.litCount = n
@@ -269,7 +247,7 @@ export class StartEngine {
       lightSchedule: [0, 1, 2, 3, 4].map((k) => first + k * LIGHT_INTERVAL_MS),
       holdMs: HOLD_MIN_MS + this.random() * (HOLD_MAX_MS - HOLD_MIN_MS),
     }
-    this.enter('ARMED')
+    this.phase = 'ARMED'
     this.emit()
     this.rafId = this.raf(this.tick)
   }
@@ -280,7 +258,7 @@ export class StartEngine {
     this.pendingInput = null
     this.setLit(0)
     this.reactionMs = null
-    this.enter('FALSE_START')
+    this.phase = 'FALSE_START'
     this.resultShownAt = t
     this.emit()
   }
@@ -297,7 +275,7 @@ export class StartEngine {
     this.tl.inputTime = t
     this.tl.reactionRaw = t - out
     this.reactionMs = Math.round(t - out)
-    this.enter('RESULT')
+    this.phase = 'RESULT'
     this.resultShownAt = t
     this.emit()
   }
@@ -328,9 +306,9 @@ export class StartEngine {
           tl.fifthLightTime = ts
           // Hold is measured from the scheduled fifth light so frame jitter doesn't leak in.
           tl.lightsOutDeadline = tl.lightSchedule[4] + tl.holdMs
-          this.enter('WAITING_FOR_LIGHTS_OUT')
+          this.phase = 'WAITING_FOR_LIGHTS_OUT'
         } else {
-          this.enter('COUNTDOWN')
+          this.phase = 'COUNTDOWN'
         }
       }
     } else if (this.phase === 'WAITING_FOR_LIGHTS_OUT') {
@@ -341,7 +319,7 @@ export class StartEngine {
         }
         this.setLit(0)
         tl.lightsOutCommitTime = ts
-        this.enter('REACTION_WINDOW')
+        this.phase = 'REACTION_WINDOW'
       }
     } else if (this.phase === 'REACTION_WINDOW') {
       if (tl.lightsOutTime === null) {

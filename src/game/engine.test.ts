@@ -8,8 +8,6 @@ import {
   RESULT_LOCK_MS,
   StartEngine,
   isEasterEgg,
-  VIBRATION_PX,
-  type Phase,
   type Snapshot,
 } from './engine'
 
@@ -223,55 +221,5 @@ describe('easter egg', () => {
     expect(isEasterEgg(100)).toBe(false)
     expect(isEasterEgg(187)).toBe(false)
     expect(isEasterEgg(null)).toBe(false)
-  })
-})
-
-describe('camera vibration', () => {
-  it('is zero everywhere except while red lights are showing, and only sub-pixel there', () => {
-    for (const p of ['INTRO', 'ARMED', 'REACTION_WINDOW', 'RESULT', 'FALSE_START'] as Phase[]) {
-      expect(VIBRATION_PX[p]).toBe(0)
-    }
-    for (const p of ['COUNTDOWN', 'WAITING_FOR_LIGHTS_OUT'] as Phase[]) {
-      expect(VIBRATION_PX[p]).toBeGreaterThan(0)
-      expect(VIBRATION_PX[p]).toBeLessThanOrEqual(0.1)
-    }
-  })
-
-  it('reports each phase change, and lights-out switches vibration off on the same frame', () => {
-    const phases: Phase[] = []
-    const events: string[] = []
-    let t = 1000
-    let queue: FrameRequestCallback[] = []
-    const e = new StartEngine({
-      setLights: (n) => events.push(`L${n}`),
-      onChange: () => {},
-      onPhase: (p) => {
-        phases.push(p)
-        events.push(`V${VIBRATION_PX[p]}`)
-      },
-      raf: (cb) => {
-        queue.push(cb)
-        return queue.length
-      },
-      caf: () => {
-        queue = []
-      },
-      random: () => 0.5,
-    })
-    e.setReady(true)
-    e.press(t)
-    while (e.currentPhase !== 'REACTION_WINDOW' && t < 20000) {
-      t += 1000 / 60
-      const q = queue
-      queue = []
-      q.forEach((cb) => cb(t))
-    }
-    expect(phases).toEqual(['ARMED', 'COUNTDOWN', 'WAITING_FOR_LIGHTS_OUT', 'REACTION_WINDOW'])
-    // lights off and vibration off are written back-to-back inside the same frame callback
-    expect(events.slice(-2)).toEqual(['L0', 'V0'])
-    t += 1000 / 60
-    queue.splice(0).forEach((cb) => cb(t)) // frame that confirms the dark lights on screen
-    e.press(t + 300)
-    expect(phases.at(-1)).toBe('RESULT')
   })
 })
