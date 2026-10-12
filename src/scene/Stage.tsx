@@ -4,23 +4,36 @@ import type { LoadedScene } from './useScene'
 export interface StageHandle {
   /** Show `count` lit start-light columns (0–5). Direct DOM write, no React render. */
   setLights: (count: number) => void
+  /** Peak camera vibration in CSS px; 0 stops it. Direct DOM write, no React render. */
+  setVibration: (px: number) => void
 }
 
 /**
- * The onboard camera plate plus the start-light states, composited from the same render.
- * Each light overlay is the exact crop of the gantry with k columns lit, so switching is a
- * single opacity flip on a pre-decoded image.
+ * The onboard view, composited from layers of one render (same camera, lens and grade):
+ * background, start-light gantry, light glow states and the cockpit in front. Each light state
+ * is a pre-decoded image, so switching lights is a single opacity flip.
  */
 export const Stage = forwardRef<StageHandle, { scene: LoadedScene }>(function Stage({ scene }, ref) {
-  const { variant, plateUrl } = scene
+  const { variant, backgroundUrl, foregroundUrl } = scene
   const rootRef = useRef<HTMLDivElement>(null)
   const plateRef = useRef<HTMLDivElement>(null)
   const lightRefs = useRef<(HTMLImageElement | null)[]>([])
   const litRef = useRef(0)
+  const vibRef = useRef<HTMLDivElement>(null)
 
   useImperativeHandle(
     ref,
     () => ({
+      setVibration(px: number) {
+        const el = vibRef.current
+        if (!el) return
+        if (px > 0) {
+          el.style.setProperty('--vib', `${px}px`)
+          el.dataset.vib = 'on'
+        } else {
+          delete el.dataset.vib
+        }
+      },
       setLights(count: number) {
         litRef.current = count
         lightRefs.current.forEach((img, i) => {
@@ -64,17 +77,22 @@ export const Stage = forwardRef<StageHandle, { scene: LoadedScene }>(function St
   }, [variant])
 
   const L = variant.lights
+  const G = variant.gantry
+  const rect = (b: { left: number; top: number; width: number; height: number }) => ({
+    left: `${b.left * 100}%`,
+    top: `${b.top * 100}%`,
+    width: `${b.width * 100}%`,
+    height: `${b.height * 100}%`,
+  })
   return (
     <div ref={rootRef} className="absolute inset-0 overflow-hidden bg-black" aria-hidden="true">
       <div ref={plateRef} className="absolute">
-        <div className="engine-idle absolute inset-0">
-          <img
-            src={plateUrl}
-            alt=""
-            draggable={false}
-            className="absolute inset-0 h-full w-full select-none"
-            decoding="sync"
-          />
+        <div ref={vibRef} className="vibration absolute inset-0">
+          {/* 1. circuit, city, car ahead — or a photo plate from src/assets/scene/override */}
+          <img src={backgroundUrl} alt="" draggable={false} decoding="sync" className="layer inset-0 h-full w-full" />
+          {/* 2. start-light gantry, lights dark */}
+          <img src={G.url} alt="" draggable={false} decoding="sync" className="layer" style={rect(G)} />
+          {/* 3. lit lamps + their glow, added on top with a screen blend */}
           {L.urls.map((src, i) => (
             <img
               key={src}
@@ -85,16 +103,12 @@ export const Stage = forwardRef<StageHandle, { scene: LoadedScene }>(function St
               alt=""
               draggable={false}
               decoding="sync"
-              className="start-light absolute select-none"
-              style={{
-                left: `${L.left * 100}%`,
-                top: `${L.top * 100}%`,
-                width: `${L.width * 100}%`,
-                height: `${L.height * 100}%`,
-                opacity: 0,
-              }}
+              className="layer start-light"
+              style={{ ...rect(L), opacity: 0 }}
             />
           ))}
+          {/* 4. our cockpit: bodywork, halo, mirrors, steering wheel */}
+          <img src={foregroundUrl} alt="" draggable={false} decoding="sync" className="layer inset-0 h-full w-full" />
         </div>
       </div>
     </div>
