@@ -1,22 +1,26 @@
 {
   "landscape": {
-    "width": 960,
-    "height": 540,
+    "width": 2400,
+    "height": 1350,
     "focus": [
       0.5,
       0.42
     ],
     "plates": [
       {
-        "file": "landscape-960.webp",
-        "w": 960
+        "file": "landscape-2400.webp",
+        "w": 2400
+      },
+      {
+        "file": "landscape-1600.webp",
+        "w": 1600
       }
     ],
     "lights": {
-      "x": 313,
-      "y": 99,
-      "w": 176,
-      "h": 132,
+      "x": 765,
+      "y": 245,
+      "w": 461,
+      "h": 340,
       "files": [
         "landscape-lights-1.webp",
         "landscape-lights-2.webp",
