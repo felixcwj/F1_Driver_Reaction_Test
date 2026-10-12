@@ -29,20 +29,6 @@ body {
   height: 100dvh;
 }
 
-/* Grid idle: a very small, irregular camera tremor from the running engine. */
-.engine-idle {
-  animation: idle 0.42s steps(1, end) infinite;
-  will-change: transform;
-}
-@keyframes idle {
-  0% { transform: translate3d(0, 0, 0); }
-  17% { transform: translate3d(0.35px, -0.3px, 0); }
-  33% { transform: translate3d(-0.25px, 0.25px, 0); }
-  50% { transform: translate3d(0.2px, 0.35px, 0); }
-  67% { transform: translate3d(-0.35px, -0.2px, 0); }
-  83% { transform: translate3d(0.15px, 0.15px, 0); }
-}
-
 /* The light states switch instantly, like LEDs; they live on their own layer. */
 .start-light {
   will-change: opacity;
@@ -110,7 +96,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .engine-idle,
   .prompt,
   .panel-in,
   .egg {

@@ -67,7 +67,8 @@ export const Stage = forwardRef<StageHandle, { scene: LoadedScene }>(function St
   return (
     <div ref={rootRef} className="absolute inset-0 overflow-hidden bg-black" aria-hidden="true">
       <div ref={plateRef} className="absolute">
-        <div className="engine-idle absolute inset-0">
+        {/* The camera is completely still: no transform or animation on the scene, ever. */}
+        <div className="absolute inset-0">
           <img
             src={plateUrl}
             alt=""
