@@ -92,7 +92,7 @@ OUT=/tmp/lo
 .venv/bin/python render/scene.py --aspect portrait --width 1170 --samples 96 --out $OUT/P --tex $OUT
 .venv/bin/python render/scene.py --aspect portrait --width 1170 --pass lamps --out $OUT/P-lamps --tex $OUT
 .venv/bin/python render/post.py export $OUT/L landscape src/assets/scene src/scene/scenes.json --exposure=0.55 --focus=0.5,0.42 --widths=0,1600
-.venv/bin/python render/post.py export $OUT/P portrait  src/assets/scene src/scene/scenes.json --exposure=0.55 --focus=0.5,0.45 --widths=0,780
+.venv/bin/python render/post.py export $OUT/P portrait  src/assets/scene src/scene/scenes.json --exposure=0.55 --focus=0.5,0.55 --widths=0,780
 ```
 
 (≈ 1 hour on a 4-core CPU.) `src/scene/scenes.json` records each plate's size, the focus point kept on screen

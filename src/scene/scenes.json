@@ -31,23 +31,27 @@
     }
   },
   "portrait": {
-    "width": 540,
-    "height": 1170,
+    "width": 1170,
+    "height": 2535,
     "focus": [
       0.5,
-      0.4
+      0.55
     ],
     "plates": [
       {
-        "file": "portrait-540.webp",
-        "w": 540
+        "file": "portrait-1170.webp",
+        "w": 1170
+      },
+      {
+        "file": "portrait-780.webp",
+        "w": 780
       }
     ],
     "lights": {
-      "x": 62,
-      "y": 305,
-      "w": 282,
-      "h": 250,
+      "x": 0,
+      "y": 718,
+      "w": 662,
+      "h": 580,
       "files": [
         "portrait-lights-1.webp",
         "portrait-lights-2.webp",
