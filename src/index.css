@@ -1,0 +1,126 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Titillium Web', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-race: #e10600;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  color-scheme: dark;
+}
+
+/* dynamic viewport height so mobile address bars never crop the scene */
+.stage-root {
+  height: 100dvh;
+}
+
+/* Grid idle: a very small, irregular camera tremor from the running engine. */
+.engine-idle {
+  animation: idle 0.42s steps(1, end) infinite;
+  will-change: transform;
+}
+@keyframes idle {
+  0% { transform: translate3d(0, 0, 0); }
+  17% { transform: translate3d(0.35px, -0.3px, 0); }
+  33% { transform: translate3d(-0.25px, 0.25px, 0); }
+  50% { transform: translate3d(0.2px, 0.35px, 0); }
+  67% { transform: translate3d(-0.35px, -0.2px, 0); }
+  83% { transform: translate3d(0.15px, 0.15px, 0); }
+}
+
+/* The light states switch instantly, like LEDs; they live on their own layer. */
+.start-light {
+  will-change: opacity;
+  transition: none;
+}
+
+.dim {
+  background:
+    linear-gradient(to top, rgb(0 0 0 / 0.78) 0%, rgb(0 0 0 / 0.35) 45%, rgb(0 0 0 / 0.1) 75%, rgb(0 0 0 / 0.25) 100%);
+  transition: opacity 260ms ease-out;
+}
+
+/* soft local scrim so text stays legible over the busy cockpit */
+.panel-in {
+  position: relative;
+  isolation: isolate;
+  text-shadow: 0 1px 18px rgb(0 0 0 / 0.55);
+}
+.panel-in::before {
+  content: '';
+  position: absolute;
+  inset: -28% -30%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.35) 55%, transparent);
+  pointer-events: none;
+}
+
+.panel-in {
+  animation: panel-in 420ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
+}
+@keyframes panel-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+.prompt {
+  animation: breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.45; }
+}
+
+.egg {
+  animation: egg 1.1s cubic-bezier(0.2, 0.7, 0.1, 1) 280ms both;
+  background: linear-gradient(90deg, #fff 0%, #ffd9a0 50%, #fff 100%);
+  background-size: 200% 100%;
+  text-shadow: none;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes egg {
+  from { opacity: 0; letter-spacing: 0.3em; background-position: 100% 0; }
+  to { opacity: 1; letter-spacing: 0.02em; background-position: 0 0; }
+}
+
+.desktop-only {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .desktop-only {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .engine-idle,
+  .prompt,
+  .panel-in,
+  .egg {
+    animation: none;
+  }
+  .egg {
+    color: #fff;
+    background: none;
+  }
+  .dim {
+    transition: none;
+  }
+}
