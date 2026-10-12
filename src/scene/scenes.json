@@ -1,0 +1,64 @@
+{
+  "landscape": {
+    "width": 2400,
+    "height": 1350,
+    "focus": [
+      0.5,
+      0.42
+    ],
+    "plates": [
+      {
+        "file": "landscape-2400.webp",
+        "w": 2400
+      },
+      {
+        "file": "landscape-1600.webp",
+        "w": 1600
+      }
+    ],
+    "lights": {
+      "x": 765,
+      "y": 245,
+      "w": 461,
+      "h": 340,
+      "files": [
+        "landscape-lights-1.webp",
+        "landscape-lights-2.webp",
+        "landscape-lights-3.webp",
+        "landscape-lights-4.webp",
+        "landscape-lights-5.webp"
+      ]
+    }
+  },
+  "portrait": {
+    "width": 1170,
+    "height": 2535,
+    "focus": [
+      0.5,
+      0.55
+    ],
+    "plates": [
+      {
+        "file": "portrait-1170.webp",
+        "w": 1170
+      },
+      {
+        "file": "portrait-780.webp",
+        "w": 780
+      }
+    ],
+    "lights": {
+      "x": 0,
+      "y": 718,
+      "w": 662,
+      "h": 580,
+      "files": [
+        "portrait-lights-1.webp",
+        "portrait-lights-2.webp",
+        "portrait-lights-3.webp",
+        "portrait-lights-4.webp",
+        "portrait-lights-5.webp"
+      ]
+    }
+  }
+}

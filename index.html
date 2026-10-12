@@ -1,128 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Reaction Test</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        
-        body { 
-            width: 100vw; height: 100vh; background: #000; 
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%; max-width: 177.78vh; aspect-ratio: 16 / 9;
-            background-image: url('./assets/background.jpg');
-            background-size: cover; background-position: center; background-repeat: no-repeat;
-            cursor: pointer;
-        }
-
-        .input-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 999; -webkit-tap-highlight-color: transparent;
-        }
-
-        /* 좌표, 원, 필터, 마스크 등 모든 시각 요소 제거됨 */
-
-        /* --- 결과 텍스트 --- */
-        .result-text {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 10vh;
-            font-weight: 900;
-            color: #00ff00;
-            text-shadow: 0 0 20px rgba(0,255,0,0.8);
-            pointer-events: none;
-            display: none; 
-            z-index: 20;
-        }
-
-        .result-text.visible { display: block; }
-        .result-text.penalty { color: #ff0000; text-shadow: 0 0 20px red; font-size: 8vh; }
-    </style>
-</head>
-<body>
-    <div id="game-container">
-        <div class="input-layer" id="clickArea"></div>
-        <div id="resultText" class="result-text"></div>
-    </div>
-
-    <script>
-        const clickArea = document.getElementById('clickArea');
-        const resultEl = document.getElementById('resultText');
-
-        let currentState = "IDLE"; 
-        let startTime = 0;
-        let timers = [];
-
-        function handleInput(e) {
-            if(e.type === 'touchstart') e.preventDefault();
-            
-            switch (currentState) {
-                case "IDLE":
-                case "ENDED": 
-                    startSequence(); 
-                    break;
-                case "SEQUENCE":
-                case "READY": 
-                    triggerPenalty(); 
-                    break;
-                case "STARTED": 
-                    finishRace(); 
-                    break;
-            }
-        }
-
-        clickArea.addEventListener("mousedown", handleInput);
-        clickArea.addEventListener("touchstart", handleInput, {passive: false});
-        document.addEventListener("keydown", (e) => { if (e.code === "Space") handleInput(e); });
-
-        function startSequence() {
-            currentState = "SEQUENCE";
-            resultEl.classList.remove("visible"); // 텍스트 숨김
-            clearTimers();
-
-            // 시각적 카운트다운 없이 내부적으로만 시간 계산
-            // 5초 대기 후 랜덤 딜레이 시작
-            timers.push(setTimeout(() => {
-                currentState = "READY";
-                const delay = Math.random() * 2000 + 500; 
-                timers.push(setTimeout(lightsOut, delay));
-            }, 5000)); // 5초 (신호등 5개 켜지는 시간 시뮬레이션)
-        }
-
-        function lightsOut() {
-            if (currentState !== "READY") return;
-            startTime = performance.now();
-            currentState = "STARTED";
-            
-            // 시각적 신호: 텍스트 표시 (GO!)
-            // 원하시면 여기에 화면 번쩍임 효과 등을 추가할 수 있습니다.
-            resultEl.textContent = "GO!";
-            resultEl.className = "result-text visible";
-        }
-
-        function finishRace() {
-            const reactionTime = performance.now() - startTime;
-            currentState = "ENDED";
-            resultEl.textContent = reactionTime.toFixed(3) + " MS";
-            resultEl.className = "result-text visible";
-        }
-
-        function triggerPenalty() {
-            clearTimers();
-            currentState = "ENDED";
-            resultEl.textContent = "JUMP START!";
-            resultEl.className = "result-text visible penalty";
-        }
-
-        function clearTimers() { timers.forEach(t => clearTimeout(t)); timers = []; }
-    </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="LIGHTS OUT — an onboard Formula-style start reaction test on a Singapore night grid. Five red lights. Lights out. React." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23000'/%3E%3Cg fill='%23e10600'%3E%3Ccircle cx='6' cy='16' r='2.6'/%3E%3Ccircle cx='11' cy='16' r='2.6'/%3E%3Ccircle cx='16' cy='16' r='2.6'/%3E%3Ccircle cx='21' cy='16' r='2.6'/%3E%3Ccircle cx='26' cy='16' r='2.6'/%3E%3C/g%3E%3C/svg%3E" />
+    <title>LIGHTS OUT — Start Reaction Test</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
