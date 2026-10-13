@@ -45,7 +45,8 @@ export default function App() {
 
   return (
     <main className="stage-root fixed inset-0 touch-none overflow-hidden bg-black text-white">
-      {scene && <Stage ref={stageRef} scene={scene} />}
+      {/* camera flashes in the stands only while no start is running, so they can't bait a jump start */}
+      {scene && <Stage ref={stageRef} scene={scene} flashes={snap.ui !== 'RUNNING'} />}
       {scene ? <Overlay snap={snap} /> : <Loading progress={progress} error={error} />}
       {scene && !ready && <Loading progress={progress} error={error} subtle />}
     </main>

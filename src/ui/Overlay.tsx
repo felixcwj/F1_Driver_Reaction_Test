@@ -90,8 +90,8 @@ function Info() {
             of every result, so treat it as a fun estimate rather than a lab measurement.
           </p>
           <p className="mt-2 text-white/50">
-            Imagery: original CG render (Blender Cycles) made for this project. Fictional cars, no team or sponsor
-            marks.
+            Prototype imagery: reference still of a Singapore night grid, used for visual development only.
+            Third-party marks belong to their owners.
           </p>
         </div>
       )}

@@ -60,6 +60,11 @@ good relative measure on one device, not a lab measurement.
 
 ## Graphics — what they are and where they come from
 
+> **Current branch (prototype):** the scene is a reference still of the P2 grid view supplied by the project
+> owner, processed by `render/photo_plate.py` (lights-off plate, five light states, ambient light layers). Its
+> provenance and licence are unknown and it shows third-party trademarks, so it is **not cleared for public
+> release** — see `docs/visual-overhaul.md` §5 and §7. The CG pipeline below remains as the fallback.
+
 All imagery is **original computer-generated work made for this project**. No photographs, broadcast frames,
 team assets or third-party images are included.
 

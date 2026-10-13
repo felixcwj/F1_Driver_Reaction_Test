@@ -1,7 +1,7 @@
 # Visual overhaul — research, method choice, rights tracking
 
-Status: **Phase 1 (research) done. Phase 2 (prototype) blocked on asset access — see §4.**
-Camera vibration is removed and verified (§6).
+Status: **Prototype built on a user-supplied reference image (§7), on a feature branch only — not cleared for
+public release (§5).** Camera vibration is removed and verified (§6).
 
 ## 1. Reference research — Singapore start/finish straight
 
@@ -81,7 +81,7 @@ Every external input must be listed here before it can ship. Unconfirmed rows ar
 | --- | --- | --- | --- | --- | --- |
 | Rendered CG (current site) | all imagery | `render/scene.py` (this repo) | project | own work | yes |
 | Titillium Web | UI font | npm `@fontsource/titillium-web` | Accademia di Belle Arti di Urbino | SIL OFL 1.1 | yes |
-| *(none yet)* | | | | | |
+| owner-supplied reference image (1672×941, not committed) → `src/assets/scene/photo-*` | base plate, light states, haze strips | supplied by the project owner in chat, 2026-10-13 | **unknown** (provenance not stated; ICC profile only, no EXIF/C2PA; likely AI-generated) | **unknown** | **NO.** Contains third-party marks (Singapore Airlines, Red Bull, Oracle, TAG Heuer, Mobil, Pepe Jeans, Armor All, INEOS, Shell, CEVA, Ferrari/Mercedes/Red Bull liveries). Needs provenance, licence and trademark clearance, or replacement, before any public deployment |
 
 Checklist before public use of any new asset: licence permits commercial/public web use · attribution
 requirements met · no F1/FOM, FIA, team, driver or sponsor marks visible (or licensed) · no identifiable people
@@ -100,3 +100,33 @@ keyframes are gone, so the scene has no transform or animation in any state. Ver
   FALSE_START and the full frame during REACTION_WINDOW.
 
 The engine's 16 unit tests and the 45 regression browser checks still pass.
+
+## 7. Prototype: reference plate + ambient life
+
+Base: the owner's reference image of the P2 grid view, kept as the composition. `render/photo_plate.py` turns
+it into assets; nothing is redrawn.
+
+- **Lights off.** Inside each of the five pods the lit LED lens becomes an unlit lens (luminance texture
+  kept at ~7 %, red removed). Around the gantry only the red cast is removed (R clamped to G + 0.015).
+- **Light states 1–5.** Pods 1…k are restored from the photo's own pixels with soft masks (pod + 6–7 px
+  spill). The timing engine and the opacity-flip switching are unchanged.
+- **Ambient life.** All of it is opacity-only on layers fixed in place; nothing moves, and nothing is drawn
+  over the cockpit, halo, wheel, light pods or banner beam:
+
+| Effect | Where | Strength | Frequency |
+| --- | --- | --- | --- |
+| Light shimmer | 26 brightest floodlight / building / city sources (auto-detected; kept clear of the gantry, beam and cars) | warm radial glow at 2–12 % opacity, screen blend | each light on its own 2.3–6.9 s cycle with irregular keyframes and a random phase → no visible repetition |
+| Rear rain-light liveliness | 4 rain lights on the cars ahead | red glow at 0–13 % opacity | 1.1–1.9 s cycles |
+| Heat haze | far end of the straight (x 430–1240, y 272–398 of 1672×941), feathered edges | 3 copies displaced by a smooth noise field, ≤ 0.7 px horizontal / 0.45 px vertical, strongest just above the road | cross-fade cycles of 3.1 / 4.5 / 5.9 s |
+| Camera flashes | left grandstand, pit-building balconies, far stand | ~14 px burst (0.9 % of plate width), 160 ms, 25 % with a weaker pre-flash | one every 4–11 s, **only when no start is running** (INTRO / RESULT / FALSE_START) |
+
+Measured in Chromium (1440×900 and 390×844), 67/67 checks: the cockpit, halo, wheel, light pods and banner
+beam are pixel-identical across 2 s in every state; only opacity animates, only inside the ambience layer;
+no element changes position or size; no flash fired during a start. Background change: mean
+≈ 0.2/255 per channel, 99th percentile of changed pixels 16/255, max 41/255 (haze over high-contrast city
+edges); 8 % of the frame changes at all. `prefers-reduced-motion` turns all of it off.
+
+Known limits of the prototype:
+- 1672×941 source: soft on 1440p/4K and on phones (the portrait view is a 434 px wide crop upscaled ≈ 2.7×).
+- The ambience is a light layer on a still. It can't add real crowd or vehicle motion.
+- Rights: see §5 — this plate must not ship publicly as is.
