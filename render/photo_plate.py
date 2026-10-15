@@ -28,7 +28,22 @@ from PIL import Image
 from scipy import ndimage
 
 # ---------------------------------------------------------------- photo-specific geometry
-# Light pods (x0, y0, x1, y1) in source pixels, measured on the 1672x941 reference.
+# All geometry is measured on the 1672x941 reference and scaled by K = width / 1672, so an
+# upscaled copy of the same photo (e.g. 3840 px) yields identical layouts.
+REF_W = 1672
+K = 1.0
+
+
+def k(v):
+    """Reference pixels -> working pixels."""
+    return v * K
+
+
+def kr(rect):
+    return tuple(int(round(v * K)) for v in rect)
+
+
+# Light pods (x0, y0, x1, y1) in reference pixels.
 PODS = [(694, 171, 739, 241), (755, 171, 800, 241), (816, 171, 861, 241), (878, 171, 922, 241), (939, 171, 984, 241)]
 LAMP_CENTRES = [(716.5, 204.5), (776.5, 203.5), (837.5, 203.5), (899.0, 202.5), (961.5, 202.5)]
 LENS_R = 22.0
@@ -54,7 +69,7 @@ def redness(a):
 
 def lights_off(src):
     out = src.copy()
-    x0, y0, x1, y1 = GANTRY
+    x0, y0, x1, y1 = kr(GANTRY)
     g = out[y0:y1, x0:x1]
     lum = g @ np.array([0.2126, 0.7152, 0.0722], np.float32)
     # unlit lens: a faint echo of the LED grid (the reflectors still catch some floodlight)
@@ -62,8 +77,8 @@ def lights_off(src):
     disc = np.zeros(g.shape[:2], np.float32)
     yy, xx = np.mgrid[0:y1 - y0, 0:x1 - x0].astype(np.float32)
     for (cx, cy) in LAMP_CENTRES:
-        d = np.hypot(xx - (cx - x0), yy - (cy - y0))
-        disc = np.maximum(disc, np.clip((LENS_R + 1.5 - d) / 3.0, 0, 1))
+        d = np.hypot(xx - (k(cx) - x0), yy - (k(cy) - y0))
+        disc = np.maximum(disc, np.clip((k(LENS_R + 1.5) - d) / k(3.0), 0, 1))
     # elsewhere only the red cast goes: the navy banner / grey housing keep their own hue
     neutral = g.copy()
     neutral[..., 0] = np.minimum(g[..., 0], g[..., 1] + 0.015)
@@ -74,21 +89,22 @@ def lights_off(src):
 
 def light_states(src, off):
     """Cumulative states, cropped to GANTRY. Pod k is restored with a soft-edged mask."""
-    x0, y0, x1, y1 = GANTRY
+    x0, y0, x1, y1 = kr(GANTRY)
     states = []
     acc_mask = np.zeros((y1 - y0, x1 - x0), np.float32)
-    for (px0, py0, px1, py1) in PODS:
+    for pod in PODS:
+        px0, py0, px1, py1 = kr(pod)
         m = np.zeros_like(acc_mask)
         # the pod plus the halo its lamp throws onto the housing around it
-        m[py0 - y0 - 6:py1 - y0 + 6, px0 - x0 - 7:px1 - x0 + 7] = 1
-        acc_mask = np.maximum(acc_mask, ndimage.gaussian_filter(m, 2.5))
+        m[py0 - y0 - round(k(6)):py1 - y0 + round(k(6)), px0 - x0 - round(k(7)):px1 - x0 + round(k(7))] = 1
+        acc_mask = np.maximum(acc_mask, ndimage.gaussian_filter(m, k(2.5)))
         mk = acc_mask[..., None]
         states.append(src[y0:y1, x0:x1] * mk + off[y0:y1, x0:x1] * (1 - mk))
     return states
 
 
 def haze_frames(off, n=3, seed=7):
-    x0, y0, x1, y1 = HAZE
+    x0, y0, x1, y1 = kr(HAZE)
     strip = off[y0:y1, x0:x1]
     h, w, _ = strip.shape
     rng = np.random.default_rng(seed)
@@ -96,15 +112,15 @@ def haze_frames(off, n=3, seed=7):
     # stronger towards the road surface (heat rises off the asphalt), fading out at the top
     ramp = np.clip((yy / h - 0.25) / 0.6, 0, 1) ** 1.5
     # feathered alpha so the strip melts into the plate
-    fx = np.minimum(np.clip(xx / 60, 0, 1), np.clip((w - 1 - xx) / 60, 0, 1))
-    fy = np.minimum(np.clip(yy / 30, 0, 1), np.clip((h - 1 - yy) / 18, 0, 1))
+    fx = np.minimum(np.clip(xx / k(60), 0, 1), np.clip((w - 1 - xx) / k(60), 0, 1))
+    fy = np.minimum(np.clip(yy / k(30), 0, 1), np.clip((h - 1 - yy) / k(18), 0, 1))
     alpha = (fx * fy)[..., None]
     frames = []
     for _ in range(n):
-        nx = ndimage.gaussian_filter(rng.standard_normal((h, w)), (2.5, 9))
-        ny = ndimage.gaussian_filter(rng.standard_normal((h, w)), (2.5, 9))
-        nx *= 0.7 / (np.abs(nx).max() + 1e-6)
-        ny *= 0.45 / (np.abs(ny).max() + 1e-6)
+        nx = ndimage.gaussian_filter(rng.standard_normal((h, w)), (k(2.5), k(9)))
+        ny = ndimage.gaussian_filter(rng.standard_normal((h, w)), (k(2.5), k(9)))
+        nx *= k(0.7) / (np.abs(nx).max() + 1e-6)
+        ny *= k(0.45) / (np.abs(ny).max() + 1e-6)
         sx = np.clip(xx + nx * ramp, 0, w - 1)
         sy = np.clip(yy + ny * ramp, 0, h - 1)
         warped = np.stack([ndimage.map_coordinates(strip[..., c], [sy, sx], order=1) for c in range(3)], -1)
@@ -155,33 +171,56 @@ def led_points(src):
 
 
 def main():
-    photo, assets, manifest_path = sys.argv[1:4]
-    src = load(photo)
+    """photo_plate.py <reference photo> <assets dir> <scenes.json> [--hires=<same photo, upscaled>]
+
+    Effect anchors are always detected on the reference photo. Pixel assets (plates, light
+    states, haze) come from the hi-res copy when given; a reference-width plate is written too
+    so smaller screens don't download the large one. Manifest coordinates stay in reference
+    pixels (the page only uses them as fractions)."""
+    global K
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    opts = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and "=" in a)
+    photo, assets, manifest_path = args[:3]
+    ref = load(photo)
+    rh, rw, _ = ref.shape
+    assert rw == REF_W, f"reference must be {REF_W} px wide, got {rw}"
+    src = load(opts["hires"]) if "hires" in opts else ref
     h, w, _ = src.shape
+    K = w / REF_W
     off = lights_off(src)
-    to_img(off).save(f"{assets}/photo-plate-{w}.webp", "WEBP", quality=92, method=6)
-    x0, y0, x1, y1 = GANTRY
+
+    plates = []
+    for pw in sorted({w, REF_W}):
+        img = to_img(off)
+        if pw != w:
+            img = img.resize((pw, round(h * pw / w)), Image.LANCZOS)
+        name = f"photo-plate-{pw}.webp"
+        img.save(f"{assets}/{name}", "WEBP", quality=90, method=6)
+        plates.append({"file": name, "w": pw})
     light_files = []
-    for k, st in enumerate(light_states(src, off), start=1):
-        name = f"photo-lights-{k}.webp"
-        to_img(st).save(f"{assets}/{name}", "WEBP", quality=95, method=6)
+    for i, st in enumerate(light_states(src, off), start=1):
+        name = f"photo-lights-{i}.webp"
+        to_img(st).save(f"{assets}/{name}", "WEBP", quality=94, method=6)
         light_files.append(name)
     haze_files = []
-    for k, fr in enumerate(haze_frames(off), start=1):
-        name = f"photo-haze-{k}.webp"
-        to_img(fr, "RGBA").save(f"{assets}/{name}", "WEBP", quality=92, method=6)
+    for i, fr in enumerate(haze_frames(off), start=1):
+        name = f"photo-haze-{i}.webp"
+        to_img(fr, "RGBA").save(f"{assets}/{name}", "WEBP", quality=90, method=6)
         haze_files.append(name)
+
+    K = 1.0  # anchors in reference pixels
+    x0, y0, x1, y1 = GANTRY
     hx0, hy0, hx1, hy1 = HAZE
     fx = {
         "haze": {"x": hx0, "y": hy0, "w": hx1 - hx0, "h": hy1 - hy0, "files": haze_files},
-        "shimmer": shimmer_points(src),
-        "leds": led_points(src),
+        "shimmer": shimmer_points(ref),
+        "leds": led_points(ref),
         "flashZones": [{"x": a, "y": b, "w": c - a, "h": d - b} for a, b, c, d in FLASH_ZONES],
     }
     base = {
-        "width": w,
-        "height": h,
-        "plates": [{"file": f"photo-plate-{w}.webp", "w": w}],
+        "width": REF_W,
+        "height": rh,
+        "plates": plates,
         "lights": {"x": x0, "y": y0, "w": x1 - x0, "h": y1 - y0, "files": light_files},
         "fx": fx,
     }
@@ -193,7 +232,7 @@ def main():
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
         f.write("\n")
-    print("shimmer", len(fx["shimmer"]), "leds", fx["leds"])
+    print("plates", [p["w"] for p in plates], "shimmer", len(fx["shimmer"]))
 
 
 if __name__ == "__main__":
