@@ -12,7 +12,7 @@ export interface StageHandle {
  * Each light overlay is the exact crop of the gantry with k columns lit, so switching is a
  * single opacity flip on a pre-decoded image.
  */
-export const Stage = forwardRef<StageHandle, { scene: LoadedScene; flashes: boolean }>(function Stage({ scene, flashes }, ref) {
+export const Stage = forwardRef<StageHandle, { scene: LoadedScene; live: boolean }>(function Stage({ scene, live }, ref) {
   const { variant, plateUrl } = scene
   const rootRef = useRef<HTMLDivElement>(null)
   const plateRef = useRef<HTMLDivElement>(null)
@@ -77,7 +77,7 @@ export const Stage = forwardRef<StageHandle, { scene: LoadedScene; flashes: bool
             className="absolute inset-0 h-full w-full select-none"
             decoding="sync"
           />
-          {variant.fx && <Ambience fx={variant.fx} flashes={flashes} />}
+          {variant.fx && <Ambience fx={variant.fx} live={live} />}
           {L.urls.map((src, i) => (
             <img
               key={src}

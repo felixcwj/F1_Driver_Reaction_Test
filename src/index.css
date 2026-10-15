@@ -36,6 +36,10 @@ body {
 }
 
 /* ---- ambient life on the background (opacity only; see Ambience.tsx) ---- */
+/* frozen in place for the whole start sequence: only the red lights may change */
+.ambience:not([data-live]) * {
+  animation-play-state: paused !important;
+}
 .fx-haze {
   opacity: 0;
   pointer-events: none;
@@ -165,64 +169,7 @@ body {
     color: #fff;
     background: none;
   }
-  /* ---- ambient life on the background (opacity only; see Ambience.tsx) ---- */
-.fx-haze {
-  opacity: 0;
-  pointer-events: none;
-  user-select: none;
-  animation: fx-haze ease-in-out infinite;
-}
-@keyframes fx-haze {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 0.85; }
-}
-
-.fx-glow {
-  position: absolute;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  mix-blend-mode: screen;
-  opacity: 0;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-}
-.fx-shimmer {
-  background: radial-gradient(closest-side, rgb(255 246 228 / 0.85), rgb(255 246 228 / 0.25) 45%, transparent);
-  animation-name: fx-shimmer;
-}
-/* irregular breathing: never more than ~8 % of a lamp's own halo */
-@keyframes fx-shimmer {
-  0% { opacity: 0.02; }
-  19% { opacity: 0.09; }
-  33% { opacity: 0.04; }
-  58% { opacity: 0.12; }
-  71% { opacity: 0.05; }
-  86% { opacity: 0.1; }
-  100% { opacity: 0.02; }
-}
-.fx-led {
-  background: radial-gradient(closest-side, rgb(255 40 24 / 0.9), rgb(255 30 20 / 0.3) 50%, transparent);
-  animation-name: fx-led;
-}
-@keyframes fx-led {
-  0%, 100% { opacity: 0; }
-  27% { opacity: 0.1; }
-  48% { opacity: 0.03; }
-  74% { opacity: 0.13; }
-}
-
-.fx-flash {
-  position: absolute;
-  width: 0.9%;
-  aspect-ratio: 1;
-  margin: -0.45% 0 0 -0.45%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, #fff 0, rgb(235 242 255 / 0.85) 18%, rgb(220 232 255 / 0.18) 48%, transparent);
-  mix-blend-mode: screen;
-  opacity: 0;
-}
-
-.dim {
+  .dim {
     transition: none;
   }
 }

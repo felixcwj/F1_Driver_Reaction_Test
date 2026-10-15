@@ -11,7 +11,11 @@ import type { SceneFx } from './assets'
  *  - leds      rear rain lights of the cars ahead vary by ~5–10 % (1.1–1.9 s cycles)
  *  - haze      three sub-pixel heat-shimmer copies of the far straight cross-fade (3–6 s)
  *  - flashes   a rare, tiny camera flash in the stands or pit building: one every 4–11 s,
- *              160 ms long, and only while no start sequence is running
+ *              160 ms long
+ *
+ * `live` is false from the moment a start sequence begins until the reaction is measured
+ * (or the start is jumped / cancelled): every effect then freezes exactly where it is and
+ * any flash in flight is cancelled, so only the five red lights change on screen.
  *
  * Everything is off with prefers-reduced-motion.
  */
@@ -24,12 +28,14 @@ function hash(i: number, salt: number): number {
 
 const pct = (v: number) => `${v * 100}%`
 
-export const Ambience = memo(function Ambience({ fx, flashes }: { fx: SceneFx; flashes: boolean }) {
+export const Ambience = memo(function Ambience({ fx, live }: { fx: SceneFx; live: boolean }) {
   const flashRef = useRef<HTMLDivElement>(null)
-  const flashesRef = useRef(flashes)
+  const liveRef = useRef(live)
   useEffect(() => {
-    flashesRef.current = flashes
-  }, [flashes])
+    liveRef.current = live
+    // freeze: a flash that is mid-pulse must not stay half-lit on a frozen frame
+    if (!live) flashRef.current?.getAnimations().forEach((a) => a.cancel())
+  }, [live])
 
   // Camera flashes: scheduled with timers, played with the Web Animations API on one element.
   useEffect(() => {
@@ -40,7 +46,7 @@ export const Ambience = memo(function Ambience({ fx, flashes }: { fx: SceneFx; f
     }
     const fire = () => {
       const el = flashRef.current
-      if (el && flashesRef.current && document.visibilityState === 'visible' && fx.flashZones.length) {
+      if (el && liveRef.current && document.visibilityState === 'visible' && fx.flashZones.length) {
         const z = fx.flashZones[Math.floor(Math.random() * fx.flashZones.length)]
         el.style.left = pct(z.left + Math.random() * z.width)
         el.style.top = pct(z.top + Math.random() * z.height)
@@ -60,7 +66,7 @@ export const Ambience = memo(function Ambience({ fx, flashes }: { fx: SceneFx; f
   }, [fx])
 
   return (
-    <div className="ambience pointer-events-none absolute inset-0" aria-hidden="true">
+    <div className="ambience pointer-events-none absolute inset-0" data-live={live ? '' : undefined} aria-hidden="true">
       {fx.haze.urls.map((src, i) => (
         <img
           key={src}
