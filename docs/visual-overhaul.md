@@ -118,13 +118,29 @@ it into assets; nothing is redrawn.
 | Light shimmer | 26 brightest floodlight / building / city sources (auto-detected; kept clear of the gantry, beam and cars) | warm radial glow at 2–12 % opacity, screen blend | each light on its own 2.3–6.9 s cycle with irregular keyframes and a random phase → no visible repetition |
 | Rear rain-light liveliness | 4 rain lights on the cars ahead | red glow at 0–13 % opacity | 1.1–1.9 s cycles |
 | Heat haze | far end of the straight (x 430–1240, y 272–398 of 1672×941), feathered edges | 3 copies displaced by a smooth noise field, ≤ 0.7 px horizontal / 0.45 px vertical, strongest just above the road | cross-fade cycles of 3.1 / 4.5 / 5.9 s |
-| Camera flashes | left grandstand, pit-building balconies, far stand | ~14 px burst (0.9 % of plate width), 160 ms, 25 % with a weaker pre-flash | one every 4–11 s, **only when no start is running** (INTRO / RESULT / FALSE_START) |
+| Camera flashes | left grandstand, pit-building balconies, far stand | ~14 px burst (0.9 % of plate width), 160 ms, 25 % with a weaker pre-flash | one every 4–11 s |
+
+**Start-sequence freeze.** All four effects run on the INTRO, RESULT and FALSE_START screens only. From the
+start press (ARMED) until the reaction is recorded, every effect pauses exactly where it is
+(`animation-play-state: paused`) and a flash in flight is cancelled. Verified: 0 of 33 effect animations
+running and 0 opacity changes over 60 frames in ARMED, COUNTDOWN and WAITING_FOR_LIGHTS_OUT; the whole
+REACTION_WINDOW frame is pixel-identical; effects resume on RESULT and FALSE_START.
 
 Measured in Chromium (1440×900 and 390×844), 67/67 checks: the cockpit, halo, wheel, light pods and banner
 beam are pixel-identical across 2 s in every state; only opacity animates, only inside the ambience layer;
 no element changes position or size; no flash fired during a start. Background change: mean
 ≈ 0.2/255 per channel, 99th percentile of changed pixels 16/255, max 41/255 (haze over high-contrast city
 edges); 8 % of the frame changes at all. `prefers-reduced-motion` turns all of it off.
+
+**4K upscaling — evaluated, not applied.** `render/upscale.py` runs Real-ESRGAN (RRDBNet, BSD-3 weights
+`RealESRGAN_x2plus` / `RealESRGAN_x4plus` from github.com/xinntao/Real-ESRGAN releases) on CPU; results were
+resampled to 3840 px and compared at 100 % against Lanczos on the banner text, grandstand crowd, steering-wheel
+display, the car ahead and the far city. ESRGAN sharpens hard edges (banner lettering) but **invents
+detail**: the crowd turns into painterly smears with hard white blobs, the wheel display grows fake glyphs,
+and the city loses its night-haze softness. Lanczos only enlarges (no new information — the same as the
+browser scaling the 1672 px plate). Neither meets the bar, so the plate stays at its native 1672×941.
+`photo_plate.py --hires=<file>` accepts a higher-resolution copy of the same photo if a genuine one (e.g. the
+original at full resolution) becomes available.
 
 Known limits of the prototype:
 - 1672×941 source: soft on 1440p/4K and on phones (the portrait view is a 434 px wide crop upscaled ≈ 2.7×).

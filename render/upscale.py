@@ -98,7 +98,11 @@ def main():
     sd = torch.load(weights, map_location="cpu")
     net.load_state_dict(sd.get("params_ema", sd.get("params", sd)), strict=True)
     net.eval()
-    out = Image.fromarray((run(img, net, scale) * 255 + 0.5).astype(np.uint8))
+    h, w, _ = img.shape
+    # the x2 model unshuffles 2x2 blocks: work on even dimensions (edge-replicated), crop after
+    padded = np.pad(img, ((0, h % 2), (0, w % 2), (0, 0)), mode="edge")
+    up = run(padded, net, scale)[: h * scale, : w * scale]
+    out = Image.fromarray((up * 255 + 0.5).astype(np.uint8))
     if target_w:
         out = out.resize((target_w, round(out.height * target_w / out.width)), Image.LANCZOS)
     out.save(dst)
