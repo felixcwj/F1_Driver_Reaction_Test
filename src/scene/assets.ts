@@ -2,12 +2,53 @@ import manifest from './scenes.json'
 
 export type VariantName = 'landscape' | 'portrait'
 
+interface RawPoint {
+  x: number
+  y: number
+  r: number
+}
+
+interface RawRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 interface RawVariant {
   width: number
   height: number
   focus: [number, number]
   plates: { file: string; w: number }[]
-  lights: { x: number; y: number; w: number; h: number; files: string[] }
+  lights: RawRect & { files: string[] }
+  fx?: {
+    haze: RawRect & { files: string[] }
+    shimmer: RawPoint[]
+    leds: RawPoint[]
+    flashZones: RawRect[]
+  }
+}
+
+/** Point in plate fractions; `r` is a fraction of the plate width. */
+export interface FxPoint {
+  x: number
+  y: number
+  r: number
+}
+
+export interface FxRect {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+/** Ambient light effects on the background. Opacity-only: nothing in the scene moves. */
+export interface SceneFx {
+  haze: FxRect & { urls: string[] }
+  shimmer: FxPoint[]
+  leds: FxPoint[]
+  flashZones: FxRect[]
 }
 
 export interface SceneVariant {
@@ -19,6 +60,7 @@ export interface SceneVariant {
   plates: { url: string; w: number }[]
   /** Light overlay crop, as fractions of the plate. */
   lights: { left: number; top: number; width: number; height: number; urls: string[] }
+  fx: SceneFx | null
 }
 
 const files = import.meta.glob('../assets/scene/*.{webp,jpg,png}', {
@@ -31,6 +73,23 @@ function url(file: string): string {
   const u = files[`../assets/scene/${file}`]
   if (!u) throw new Error(`Missing scene asset ${file}`)
   return u
+}
+
+function buildFx(v: RawVariant): SceneFx | null {
+  if (!v.fx) return null
+  const rect = (r: RawRect): FxRect => ({
+    left: r.x / v.width,
+    top: r.y / v.height,
+    width: r.w / v.width,
+    height: r.h / v.height,
+  })
+  const point = (p: RawPoint): FxPoint => ({ x: p.x / v.width, y: p.y / v.height, r: p.r / v.width })
+  return {
+    haze: { ...rect(v.fx.haze), urls: v.fx.haze.files.map(url) },
+    shimmer: v.fx.shimmer.map(point),
+    leds: v.fx.leds.map(point),
+    flashZones: v.fx.flashZones.map(rect),
+  }
 }
 
 function build(name: VariantName, v: RawVariant): SceneVariant {
@@ -47,6 +106,7 @@ function build(name: VariantName, v: RawVariant): SceneVariant {
       height: v.lights.h / v.height,
       urls: v.lights.files.map(url),
     },
+    fx: buildFx(v),
   }
 }
 

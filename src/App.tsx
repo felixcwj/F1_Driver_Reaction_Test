@@ -45,7 +45,8 @@ export default function App() {
 
   return (
     <main className="stage-root fixed inset-0 touch-none overflow-hidden bg-black text-white">
-      {scene && <Stage ref={stageRef} scene={scene} />}
+      {/* ambient effects run on the intro/result screens and freeze for the whole start sequence */}
+      {scene && <Stage ref={stageRef} scene={scene} live={snap.ui !== 'RUNNING'} />}
       {scene ? <Overlay snap={snap} /> : <Loading progress={progress} error={error} />}
       {scene && !ready && <Loading progress={progress} error={error} subtle />}
     </main>
